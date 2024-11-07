@@ -1,4 +1,3 @@
-
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 
 local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
@@ -11,33 +10,28 @@ local Window = Library:CreateWindow({
     -- Position and Size are also valid options here
     -- but you do not need to define them unless you are changing them :)
 
-    Title = 'Zyg Hub [V3]',
+    Title = 'Zyg Hub [V3] Dev',
     Center = true,
     AutoShow = true,
     TabPadding = 8,
     MenuFadeTime = 0.2
 })
 
+-- CALLBACK NOTE:
+-- Passing in callback functions via the initial element parameters (i.e. Callback = function(Value)...) works
+-- HOWEVER, using Toggles/Options.INDEX:OnChanged(function(Value) ... ) is the RECOMMENDED way to do this.
+-- I strongly recommend decoupling UI code from logic code. i.e. Create your UI elements FIRST, and THEN setup :OnChanged functions later.
+
+-- You do not have to set your tabs & groups up this way, just a prefrence.
 local Tabs = {
     -- Creates a new tab titled Main
     Main = Window:AddTab('Main'),
-    ['Teleports'] = Window:AddTab('Teleports'),
-    ['Additions'] = Window:AddTab('Additions'),
-    ['ESP'] = Window:AddTab('ESP'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
-local LeftGroupBox = Tabs.Main:AddLeftGroupbox('Integrities')
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Perfect Catch',
-    Func = function()loadstring(game:HttpGet("https://pastebin.com/raw/xvUBwHBY"))()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Auto Catches but u still needa reel'
-})
-
-LeftGroupBox:AddDivider()
+-- Groupbox and Tabbox inherit the same functions
+-- except Tabboxes you have to call the functions on a tab (Tabbox:AddTab(name))
+local LeftGroupBox = Tabs.Main:AddLeftGroupbox('Main Scripts')
 
 local MyButton = LeftGroupBox:AddButton({
     Text = 'Infinite Jump',
@@ -147,31 +141,165 @@ end
 
 LeftGroupBox:AddDivider()
 
--- Groupbox:AddToggle
--- Arguments: Index, Options
-LeftGroupBox:AddToggle('MyToggle', {
-    Text = 'Anti AFK',
-    Default = false, -- Default value (true / false)
-
-    Callback = function(Value)local vu = game:GetService("VirtualUser")
-game:GetService("Players").LocalPlayer.Idled:connect(function()
-vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-wait(1)
-vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-end)
-    end
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Rejoin',
+    Func = function()game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
+    end,
+    DoubleClick = true,
+    Tooltip = 'Rejoins the same server'
 })
-
-Toggles.MyToggle:OnChanged(function()
-    -- here we get our toggle object & then get its value
-end)
-
--- This should print to the console: "My toggle state changed! New value: false"
-Toggles.MyToggle:SetValue(false)
 
 -- Groupbox:AddDivider
 -- Arguments: None
 
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Chat Logger',
+    Func = function()-- Version: 2.82
+-- Instances:
+local ChatGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local LogPanel = Instance.new("ScrollingFrame")
+local Close = Instance.new("TextButton")
+local Mini = Instance.new("TextButton")
+local Log = Instance.new("TextButton")
+local title = Instance.new("TextLabel")
+--Properties:
+ChatGui.Name = "ChatGui"
+ChatGui.Parent = game.Players.LocalPlayer.PlayerGui
+ChatGui.ResetOnSpawn = false
+ 
+Frame.Parent = ChatGui
+Frame.BackgroundColor3 = Color3.new(0, 0, 0)
+Frame.BorderSizePixel = 0
+Frame.Position = UDim2.new(0.0278396439, 0, 0.565217376, 0)
+Frame.Size = UDim2.new(0, 392, 0, 25)
+Frame.Active = true
+Frame.Draggable = true
+ 
+LogPanel.Name = "LogPanel"
+LogPanel.Parent = Frame
+LogPanel.BackgroundColor3 = Color3.new(0, 0, 0)
+LogPanel.BorderColor3 = Color3.new(0.223529, 0.223529, 0.223529)
+LogPanel.Position = UDim2.new(-0.000221580267, 0, 0.968695641, 0)
+LogPanel.Size = UDim2.new(0, 392, 0, 203)
+LogPanel.ScrollBarThickness = 5
+LogPanel.ScrollingEnabled = true
+LogPanel.CanvasSize=UDim2.new(2,0,100,0)
+ 
+Close.Name = "Close"
+Close.Parent = Frame
+Close.BackgroundColor3 = Color3.new(1, 1, 1)
+Close.BackgroundTransparency = 1
+Close.Position = UDim2.new(0.823979557, 0, 0.0399999991, 0)
+Close.Size = UDim2.new(0, 69, 0, 24)
+Close.Font = Enum.Font.SourceSans
+Close.Text = "Close"
+Close.TextColor3 = Color3.new(1, 1, 1)
+Close.TextSize = 14
+ 
+Mini.Name = "Mini"
+Mini.Parent = Frame
+Mini.BackgroundColor3 = Color3.new(1, 1, 1)
+Mini.BackgroundTransparency = 1
+Mini.Position = UDim2.new(0.647959173, 0, 0, 0)
+Mini.Size = UDim2.new(0, 69, 0, 24)
+Mini.Font = Enum.Font.SourceSans
+Mini.Text = "Minimize"
+Mini.TextColor3 = Color3.new(1, 1, 1)
+Mini.TextSize = 14
+ 
+Log.Name = "Log"
+Log.Parent = Frame
+Log.BackgroundColor3 = Color3.new(1, 1, 1)
+Log.BackgroundTransparency = 1
+Log.Position = UDim2.new(0.293367326, 0, 0, 0)
+Log.Size = UDim2.new(0, 69, 0, 24)
+Log.Font = Enum.Font.SourceSans
+Log.Text = "Log Chat [ON]"
+Log.TextColor3 = Color3.new(1, 1, 1)
+Log.TextSize = 14
+ 
+title.Name = "title"
+title.Parent = Frame
+title.BackgroundColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(0, 115, 0, 24)
+title.Font = Enum.Font.SourceSans
+title.Text = "Chat GUI"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
+-- Scripts:
+local logging = true
+local minimized = false
+Log.MouseButton1Down:Connect(function()
+	logging = not logging
+	if logging then Log.Text = "Log Chat [ON]" else Log.Text = "Log Chat [OFF]" end
+end)
+Mini.MouseButton1Down:Connect(function()
+	if minimized then
+		LogPanel:TweenSize(UDim2.new(0, 392, 0, 203), "InOut", "Sine", 0.5, false, nil)
+	else
+		LogPanel:TweenSize(UDim2.new(0, 392, 0, 0), "InOut", "Sine", 0.5, false, nil)
+	end
+	minimized = not minimized
+end)
+Close.MouseButton1Down:Connect(function()
+	ChatGui:Destroy()
+end)
+ 
+local prevOutputPos = 0
+function output(plr, msg)
+	if not logging then return end
+	local colour = Color3.fromRGB(255,255,255)
+ 
+	if string.sub(msg, 1,1) == ":" or string.sub(msg,1,1) == ";" then colour = Color3.fromRGB(255,0,0) elseif string.sub(msg,1,2) == "/w" or string.sub(msg,1,7) == "/whisper" or string.sub(msg,1,5) == "/team" or string.sub(msg,1,2) == "/t" then colour = Color3.fromRGB(0,0,255) else colour = Color3.fromRGB(255,255,255) end
+ 
+ 	local o = Instance.new("TextLabel",LogPanel)
+ 	o.Text = plr.Name .. ": " .. msg
+ 	o.Size = UDim2.new(0.5,0,.006,0)
+ 	o.Position = UDim2.new(0,0,.007 + prevOutputPos ,0)
+ 	o.Font = Enum.Font.SourceSansSemibold
+ 	o.TextColor3 = colour
+ 	o.TextStrokeTransparency = 0
+ 	o.BackgroundTransparency = 0
+	o.BackgroundColor3 = Color3.new(0,0,0)
+ 	o.BorderSizePixel = 0
+	o.BorderColor3 = Color3.new(0,0,0)
+ 	o.FontSize = "Size14"
+	o.TextXAlignment = Enum.TextXAlignment.Left
+ 	o.ClipsDescendants = true
+	prevOutputPos = prevOutputPos + 0.007
+	end
+ 
+for i,v in pairs(game.Players:GetChildren()) do
+	v.Chatted:Connect(function(msg)
+		output(v, msg)
+	end)
+end
+ 
+game.Players.ChildAdded:Connect(function(plr)
+	if plr:IsA("Player") then
+		plr.Chatted:Connect(function(msg)
+			output(plr, msg)
+		end)
+	end
+end)
+    end,
+    DoubleClick = false,
+    Tooltip = 'allows you to see what people are saying'
+})
+
+
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Get GameID',
+    Func = function()print(game.PlaceId)
+    end,
+    DoubleClick = false,
+    Tooltip = 'Gets the Location ID'
+})
+-- Label:AddKeyPicker
+-- Arguments: Idx, Info
 
 LeftGroupBox:AddLabel('Panic Button [Deletes UI]'):AddKeyPicker('KeyPicker', {
     -- SyncToggleState only works with toggles.
@@ -202,230 +330,201 @@ LeftGroupBox:AddLabel('Panic Button [Deletes UI]'):AddKeyPicker('KeyPicker', {
 LeftGroupBox:AddDivider()
 
 local MyButton = LeftGroupBox:AddButton({
-    Text = 'Show Server Info',
-    Func = function()local args = {
-    [1] = "serverinfo",
-    [2] = true
-}
-
-game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.menu.menu_safezone.ChangeSetting:FireServer(unpack(args))
-    end,
-    DoubleClick = false,
-    Tooltip = 'Displays Server Info'
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Mute Music',
-    Func = function()local args = {
-    [1] = "music",
-    [2] = false
-}
-
-game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.menu.menu_safezone.ChangeSetting:FireServer(unpack(args))
-
-    end,
-    DoubleClick = false,
-    Tooltip = 'Mutes In game music'
-})
-
-
-
-local RightGroupBox = Tabs.Main:AddRightGroupbox('Main Scripts')
-local MyButton = RightGroupBox:AddButton('FullBright', function()loadstring(game:HttpGet("https://pastebin.com/raw/wLajZhKE"))()
-end)
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Enable Reset',
-    Func = function()while true do
-     game:GetService("StarterGui"):SetCore("ResetButtonCallback", true)
-     game:GetService("RunService").RenderStepped:Wait()
-end
-    end,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Remove Zoom Cap',
-    Func = function()workspace.world.npcs.Appraiser.appraiser.appraise:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Removes the Cap that roblox adds to the zoom'
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Reroll Lantern',
-    Func = function()workspace.world.npcs["Mods Latern Keeper"]["mods lantern"].purchase:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Rerolls the lantern you have'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Appraise Fish',
-    Func = function()workspace.world.npcs.Appraiser.appraiser.appraise:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Appraises fish that you are holding out'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Sell fish',
-    Func = function()workspace.world.npcs["Marc Merchant"].merchant.sell:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Sells only one fish that you are holding out'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Sell Inventory',
-    Func = function()workspace.world.npcs["Marc Merchant"].merchant.sellall:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Sells all of the fish in your inventory'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Remove AFK popup',
-    Func = function()while wait() do
-local args = {
-    [1] = false
-}
-
-game:GetService("ReplicatedStorage").events.afk:FireServer(unpack(args))
-end
-    end,
-    DoubleClick = false,
-    Tooltip = 'May Cause Lag'
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Redeem All Codes',
-    Func = function()local args = {
-    [1] = "ThanksFor10Mil"
-}
-
-game:GetService("ReplicatedStorage").events.runcode:FireServer(unpack(args))
---
-local args = {
-    [1] = "FischFright2024"
-}
-
-game:GetService("ReplicatedStorage").events.runcode:FireServer(unpack(args))
-    end,
-    DoubleClick = false,
-    Tooltip = 'Redeems all Codes for the game'
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Get Angler Quest',
-    Func = function()workspace.world.npcs["Marc Merchant"].merchant.sellall:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Invokes server to get quest'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Turn in fish to angler',
-    Func = function()workspace.world.npcs["Moosewood Angler"].angler.questCompleted:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Hold Out fish'
-})
-
-
-
-
--- OnClick is only fired when you press the keybind and the mode is Toggle
--- Otherwise, you will have to use Keybind:GetState()
-Options.KeyPicker:OnClick(function()
-end)
-
-task.spawn(function()
-    while true do
-        wait(1)
-
-        -- example for checking if a keybind is being pressed
-        local state = Options.KeyPicker:GetState()
-        if state then
-        end
-
-        if Library.Unloaded then break end
+    Text = 'Esp Players',
+    Func = function()local function updatePlayerESP()
+    local localCharacter = game.Players.LocalPlayer.Character
+    if not localCharacter then
+        return
     end
+ 
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            local distance = (localCharacter.Head.Position - player.Character.Head.Position).Magnitude
+            local billboardGui = player.Character.Head:FindFirstChild("TadachiisESPTags") -- Check if the BillboardGui exists
+            if not billboardGui then -- Only create a new one if it doesn't exist
+                billboardGui = Instance.new("BillboardGui")
+                billboardGui.Name = "TadachiisESPTags" -- Use the correct name for the BillboardGui
+                billboardGui.Adornee = player.Character.Head
+                billboardGui.Size = UDim2.new(0, 100, 0, 50) -- fixed size for the BillboardGui
+                billboardGui.StudsOffset = Vector3.new(0, 2, 0) -- adjust the vertical offset as needed
+                billboardGui.AlwaysOnTop = true
+                billboardGui.LightInfluence = 1
+                billboardGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+                billboardGui.Parent = player.Character.Head
+ 
+                local textLabel = Instance.new("TextLabel")
+                textLabel.Name = "NameLabel" -- Use the correct name for the label
+                textLabel.Text = player.Name .. "\nDistance: " .. math.floor(distance)
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.BackgroundTransparency = 1 -- transparent background
+                textLabel.TextColor3 = Color3.new(1, 0, 0) -- red text for the player's name
+                textLabel.TextScaled = true
+                textLabel.TextStrokeColor3 = Color3.new(0, 0, 0) -- black text stroke
+                textLabel.TextStrokeTransparency = 0 -- fully opaque text stroke (visible through walls)
+                textLabel.Visible = true -- ESP is always visible without a GUI
+                textLabel.Parent = billboardGui
+            else
+                billboardGui.NameLabel.Text = player.Name .. "\nDistance: " .. math.floor(distance) -- Update the distance text
+            end
+        end
+    end
+end
+ 
+-- Call updatePlayerESP() initially and then schedule it to be called every 0.01 seconds
+updatePlayerESP()
+game:GetService("RunService").Heartbeat:Connect(function()
+    updatePlayerESP()
 end)
-
-Options.KeyPicker:SetValue({ 'RightAlt', 'Toggle' }) -- Sets keybind to what you want it to be, mode to Hold
-
--- Library functions
--- Sets the watermark visibility
-Library:SetWatermarkVisibility(true)
-
--- Example of dynamically-updating watermark with common traits (fps and ping)
-local FrameTimer = tick()
-local FrameCounter = 0;
-local FPS = 60;
-
-local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(function()
-    FrameCounter += 1;
-
-    if (tick() - FrameTimer) >= 1 then
-        FPS = FrameCounter;
-        FrameTimer = tick();
-        FrameCounter = 0;
-    end;
-
-    Library:SetWatermark(('LinoriaLib demo | %s fps | %s ms'):format(
-        math.floor(FPS),
-        math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
-    ));
-end);
-
-Library.KeybindFrame.Visible = true; -- todo: add a function for this
-
-Library:OnUnload(function()
-    WatermarkConnection:Disconnect()
-
-    print('')
-    Library.Unloaded = true
-end)
-
--- Additions
-local MenuGroup = Tabs['Additions']
-local LeftGroupBox = Tabs.Additions:AddLeftGroupbox('Scripts')
+    end,
+    DoubleClick = false,
+})
 
 local MyButton = LeftGroupBox:AddButton({
+    Text = 'Full Bright',
+    Func = function()if not _G.FullBrightExecuted then
+ 
+    _G.FullBrightEnabled = false
+ 
+    _G.NormalLightingSettings = {
+        Brightness = game:GetService("Lighting").Brightness,
+        ClockTime = game:GetService("Lighting").ClockTime,
+        FogEnd = game:GetService("Lighting").FogEnd,
+        GlobalShadows = game:GetService("Lighting").GlobalShadows,
+        Ambient = game:GetService("Lighting").Ambient
+    }
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("Brightness"):Connect(function()
+        if game:GetService("Lighting").Brightness ~= 1 and game:GetService("Lighting").Brightness ~= _G.NormalLightingSettings.Brightness then
+            _G.NormalLightingSettings.Brightness = game:GetService("Lighting").Brightness
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").Brightness = 1
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("ClockTime"):Connect(function()
+        if game:GetService("Lighting").ClockTime ~= 12 and game:GetService("Lighting").ClockTime ~= _G.NormalLightingSettings.ClockTime then
+            _G.NormalLightingSettings.ClockTime = game:GetService("Lighting").ClockTime
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").ClockTime = 12
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("FogEnd"):Connect(function()
+        if game:GetService("Lighting").FogEnd ~= 786543 and game:GetService("Lighting").FogEnd ~= _G.NormalLightingSettings.FogEnd then
+            _G.NormalLightingSettings.FogEnd = game:GetService("Lighting").FogEnd
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").FogEnd = 786543
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("GlobalShadows"):Connect(function()
+        if game:GetService("Lighting").GlobalShadows ~= false and game:GetService("Lighting").GlobalShadows ~= _G.NormalLightingSettings.GlobalShadows then
+            _G.NormalLightingSettings.GlobalShadows = game:GetService("Lighting").GlobalShadows
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").GlobalShadows = false
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("Ambient"):Connect(function()
+        if game:GetService("Lighting").Ambient ~= Color3.fromRGB(178, 178, 178) and game:GetService("Lighting").Ambient ~= _G.NormalLightingSettings.Ambient then
+            _G.NormalLightingSettings.Ambient = game:GetService("Lighting").Ambient
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
+        end
+    end)
+ 
+    game:GetService("Lighting").Brightness = 1
+    game:GetService("Lighting").ClockTime = 12
+    game:GetService("Lighting").FogEnd = 786543
+    game:GetService("Lighting").GlobalShadows = false
+    game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
+ 
+    local LatestValue = true
+    spawn(function()
+        repeat
+            wait()
+        until _G.FullBrightEnabled
+        while wait() do
+            if _G.FullBrightEnabled ~= LatestValue then
+                if not _G.FullBrightEnabled then
+                    game:GetService("Lighting").Brightness = _G.NormalLightingSettings.Brightness
+                    game:GetService("Lighting").ClockTime = _G.NormalLightingSettings.ClockTime
+                    game:GetService("Lighting").FogEnd = _G.NormalLightingSettings.FogEnd
+                    game:GetService("Lighting").GlobalShadows = _G.NormalLightingSettings.GlobalShadows
+                    game:GetService("Lighting").Ambient = _G.NormalLightingSettings.Ambient
+                else
+                    game:GetService("Lighting").Brightness = 1
+                    game:GetService("Lighting").ClockTime = 12
+                    game:GetService("Lighting").FogEnd = 786543
+                    game:GetService("Lighting").GlobalShadows = false
+                    game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
+                end
+                LatestValue = not LatestValue
+            end
+        end
+    end)
+end
+ 
+_G.FullBrightExecuted = true
+_G.FullBrightEnabled = not _G.FullBrightEnabled
+    end,
+    DoubleClick = false,
+    Tooltip = 'Makes the game bright'
+})
+
+
+
+local RightGroupBox = Tabs.Main:AddRightGroupbox('Integrities')
+
+local MyButton = RightGroupBox:AddButton({
     Text = 'Dark Dex V5',
     Func = function()loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()
     end,
     DoubleClick = false,
 })
 
-local MyButton = LeftGroupBox:AddButton({
+local MyButton = RightGroupBox:AddButton({
     Text = 'Simple Spy',
     Func = function()loadstring(game:HttpGet("https://pastebin.com/raw/U2r2Q9Kh", true))()
     end,
     DoubleClick = false,
 })
 
-local MyButton = LeftGroupBox:AddButton({
+local MyButton = RightGroupBox:AddButton({
     Text = 'Orca Hub',
     Func = function()loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/richie0866/orca/master/public/snapshot.lua"))()
     end,
     DoubleClick = false,
 })
 
-local MyButton = LeftGroupBox:AddButton({
+local MyButton = RightGroupBox:AddButton({
     Text = 'Infinite Yield',
     Func = function()loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/edgeiy/infiniteyield/master/source"))()
     end,
     DoubleClick = false,
 })
 
-local MyButton = LeftGroupBox:AddButton({
+local MyButton = RightGroupBox:AddButton({
     Text = 'Get coordinates script',
     Func = function()local coordgui = Instance.new("ScreenGui")
 local main = Instance.new("Frame")
@@ -548,429 +647,72 @@ end)
 })
 
 
-local RightGroupBox = Tabs.Additions:AddRightGroupbox('Integrities')
 
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Get GameID',
-    Func = function()print(game.PlaceId)
-    end,
-    DoubleClick = false,
-    Tooltip = 'Gets the Location ID'
-})
 
-local RightGroupBox = Tabs.Additions:AddRightGroupbox('Server')
 
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Rejoin',
-    Func = function()game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
-    end,
-    DoubleClick = true,
-    Tooltip = 'Rejoins the same server'
-})
 
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Small Server Joiner',
-    Func = function()local Http = game:GetService("HttpService")
-local TPS = game:GetService("TeleportService")
-local Api = "https://games.roblox.com/v1/games/"
- 
-local _place = game.PlaceId
-local _servers = Api.._place.."/servers/Public?sortOrder=Asc&limit=100"
-function ListServers(cursor)
-   local Raw = game:HttpGet(_servers .. ((cursor and "&cursor="..cursor) or ""))
-   return Http:JSONDecode(Raw)
-end
- 
-local Server, Next; repeat
-   local Servers = ListServers(Next)
-   Server = Servers.data[1]
-   Next = Servers.nextPageCursor
-until Server
- 
-TPS:TeleportToPlaceInstance(_place,Server.id,game.Players.LocalPlayer)
-    end,
-    DoubleClick = true,
-    Tooltip = 'Teleports you to a small server'
-})
 
-local LeftGroupBox = Tabs.Teleports:AddLeftGroupbox('Islands')
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Moosewood',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(478.76080322265625, 150.88731384277344, 256.99835205078125)
-    end,
-    DoubleClick = false,
-})
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Angler NPC',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-190.73927307128906, 135.71890258789062, 1960.935791015625)
-    end,
-    DoubleClick = false,
-})
 
-LeftGroupBox:AddDivider()
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Roslit Bay',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1473.2532958984375, 132.52549743652344, 706.1644897460938)
-    end,
-    DoubleClick = false,
-})
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Roslit Pond',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1785.347412109375, 148.0926055908203, 645.361328125)
-    end,
-    DoubleClick = false,
-})
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Roslit Volcano',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1912.2547607421875, 164.58445739746094, 318.4088439941406)
-    end,
-    DoubleClick = false,
-})
 
-LeftGroupBox:AddDivider()
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Sunstone Island',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-969.1112060546875, 222.12545776367188, -986.8920288085938)
-    end,
-    DoubleClick = false,
-})
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Sunstone Island Cave',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1144.284423828125, 134.49998474121094, -1069.3402099609375)
-    end,
-    DoubleClick = false,
-})
-
-LeftGroupBox:AddDivider()
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Statue Of Sovereignty',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(32.411834716796875, 159.01470947265625, -1037.25537109375)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Sovereignty Mines',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-20.240066528320312, 136.4925994873047, -1130.1387939453125)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Enchant Altar',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1312.7747802734375, -805.292236328125, -116.39986419677734)
-
-    end,
-    DoubleClick = false,
-})
-
-local RightGroupBox = Tabs.Teleports:AddRightGroupbox('Islands')
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Snow Cap Island',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2687.690185546875, 152.71414184570312, 2394.713134765625)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Snow Cap Island Cave',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2870.4, 141.3, 2607.6)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Mushgrove Swamp',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2447.5, 130.9, -676.4)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Gamma Grotto',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2234.450927734375, -804.1823120117188, 1034.0631103515625)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Virtigo',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-106.84429931640625, -515.2994384765625, 1138.7056884765625)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Mod Office',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-36.44055938720703, -246.55001831054688, 206.49179077148438)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Harvesters Spike',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1252.5274658203125, 136.81735229492188, 1557.444091796875)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'The Arch',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(995.0608520507812, 131.3202362060547, -1234.4146728515625)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Terrapin Island',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-155.4606475830078, 144.85484313964844, 1935.9346923828125)
-    end,
-    DoubleClick = false,
-})
-
-local LeftGroupBox = Tabs.Teleports:AddLeftGroupbox('Npc')
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Calaria',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(979.8135375976562, 131.32025146484375, -1234.2672119140625)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Appraiser',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(446.9096374511719, 150.5481414794922, 207.86827087402344)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Ashe',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1711.3140869140625, 148.00001525878906, 727.0239868164062)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Cole',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-23.957019805908203, 136.4925994873047, -1134.3106689453125)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Lantern Keeper',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(658.7532958984375, 163.70030212402344, 263.33001708984375)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Leeri',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-136.39031982421875, -548.2994384765625, 1428.3680419921875)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Perdido',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-97.83454132080078, -566.29931640625, 1553.118408203125)
-    end,
-    DoubleClick = false,
-})
-
-local LeftGroupBox = Tabs.Teleports:AddLeftGroupbox('Inn Keeper')
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Moosewood Inn Keeper',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(489.5142517089844, 150.7000274658203, 233.4305419921875)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Roslit Inn Keeper',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1509.3538818359375, 133.00001525878906, 628.8071899414062)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Snowcap Inn Keeper',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2661.626708984375, 155.16114807128906, 2392.70263671875)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Sunstone Inn Keeper',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-906.4525146484375, 131.07879638671875, -1103.8641357421875)
-    end,
-    DoubleClick = false,
-})
-
-
-
-local RightGroupBox = Tabs.Teleports:AddRightGroupbox('Npcs')
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Orc',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1847.85400390625, 165.7111358642578, 161.4885711669922)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Wilson',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2936.706298828125, 280.7837829589844, 2567.025146484375)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Phineas',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(472.5872802734375, 150.69342041015625, 277.0097961425781)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Merlin',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-930.3570556640625, 225.73098754882812, -993.3174438476562)
-    end,
-    DoubleClick = false,
-})
-
-
-
-local RightGroupBox = Tabs.Teleports:AddRightGroupbox('Shipwright')
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Mushgrove Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2455.2783203125, 130.664306640625, -666.0444946289062)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Moosewood Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(360.6377258300781, 133.61595153808594, 258.4936828613281)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Roslit Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1453.57763671875, 133.0000457763672, 743.05322265625)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Snowcap Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2619.9248046875, 136.28387451171875, 2404.054443359375)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Statue Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(26.117507934570312, 135.03036499023438, -1008.5941162109375)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Sunstone Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-941.6656494140625, 131.0788116455078, -1116.7144775390625)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Terrapin Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-191.16427612304688, 132.50003051757812, 1924.0589599609375)
-    end,
-    DoubleClick = false,
-})
-
-
-local MenuGroup = Tabs['ESP']
-local LeftGroupBox = Tabs.ESP:AddLeftGroupbox('Integrities')
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Players',
-    Func = function()local function updatePlayerESP()
-    local localCharacter = game.Players.LocalPlayer.Character
-    if not localCharacter then
-        return
-    end
- 
-    for _, player in ipairs(game.Players:GetPlayers()) do
-        if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-            local distance = (localCharacter.Head.Position - player.Character.Head.Position).Magnitude
-            local billboardGui = player.Character.Head:FindFirstChild("TadachiisESPTags") -- Check if the BillboardGui exists
-            if not billboardGui then -- Only create a new one if it doesn't exist
-                billboardGui = Instance.new("BillboardGui")
-                billboardGui.Name = "TadachiisESPTags" -- Use the correct name for the BillboardGui
-                billboardGui.Adornee = player.Character.Head
-                billboardGui.Size = UDim2.new(0, 100, 0, 50) -- fixed size for the BillboardGui
-                billboardGui.StudsOffset = Vector3.new(0, 2, 0) -- adjust the vertical offset as needed
-                billboardGui.AlwaysOnTop = true
-                billboardGui.LightInfluence = 1
-                billboardGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-                billboardGui.Parent = player.Character.Head
- 
-                local textLabel = Instance.new("TextLabel")
-                textLabel.Name = "NameLabel" -- Use the correct name for the label
-                textLabel.Text = player.Name .. "\nDistance: " .. math.floor(distance)
-                textLabel.Size = UDim2.new(1, 0, 1, 0)
-                textLabel.BackgroundTransparency = 1 -- transparent background
-                textLabel.TextColor3 = Color3.new(1, 0, 0) -- red text for the player's name
-                textLabel.TextScaled = true
-                textLabel.TextStrokeColor3 = Color3.new(0, 0, 0) -- black text stroke
-                textLabel.TextStrokeTransparency = 0 -- fully opaque text stroke (visible through walls)
-                textLabel.Visible = true -- ESP is always visible without a GUI
-                textLabel.Parent = billboardGui
-            else
-                billboardGui.NameLabel.Text = player.Name .. "\nDistance: " .. math.floor(distance) -- Update the distance text
-            end
-        end
-    end
-end
- 
--- Call updatePlayerESP() initially and then schedule it to be called every 0.01 seconds
-updatePlayerESP()
-game:GetService("RunService").Heartbeat:Connect(function()
-    updatePlayerESP()
+-- OnClick is only fired when you press the keybind and the mode is Toggle
+-- Otherwise, you will have to use Keybind:GetState()
+Options.KeyPicker:OnClick(function()
 end)
-    end,
-    DoubleClick = false,
-})
 
+task.spawn(function()
+    while true do
+        wait(1)
 
+        -- example for checking if a keybind is being pressed
+        local state = Options.KeyPicker:GetState()
+        if state then
+        end
 
+        if Library.Unloaded then break end
+    end
+end)
+
+Options.KeyPicker:SetValue({ 'RightAlt', 'Toggle' }) -- Sets keybind to what you want it to be, mode to Hold
+
+-- Library functions
+-- Sets the watermark visibility
+Library:SetWatermarkVisibility(true)
+
+-- Example of dynamically-updating watermark with common traits (fps and ping)
+local FrameTimer = tick()
+local FrameCounter = 0;
+local FPS = 60;
+
+local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(function()
+    FrameCounter += 1;
+
+    if (tick() - FrameTimer) >= 1 then
+        FPS = FrameCounter;
+        FrameTimer = tick();
+        FrameCounter = 0;
+    end;
+
+    Library:SetWatermark(('Zyg Hub [V3] (Dev version) | %s fps | %s ms'):format(
+        math.floor(FPS),
+        math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
+    ));
+end);
+
+Library.KeybindFrame.Visible = true; -- todo: add a function for this
+
+Library:OnUnload(function()
+    WatermarkConnection:Disconnect()
+
+    print('Unloaded!')
+    Library.Unloaded = true
+end)
 
 -- UI Settings
 local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
