@@ -3,13 +3,13 @@ local gameScripts = {
     [6751580221] = function() -- Replace with your game's PlaceId --Mountfall OG
         print("Running Script for Mountfall")
         loadstring(game:HttpGet("https://pastebin.com/raw/mV4HLUpd"))()
-        -- Script logic for Game 1
+        -- Script logic for Game 0
     end,
 
     [6751580221] = function() -- Replace with your game's PlaceId --Fisch
         print("Running Script for Fisch")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch"))()
-        -- Script logic for Game 2
+        -- Script logic for Game 1
     end,
 
     [6751580221] = function() -- Replace with your game's PlaceId --BS2
@@ -36,7 +36,7 @@ local gameScripts = {
         -- Script logic for Game 5
     end,
 
-    [573553160] = function() -- Replace with another PlaceId --Deepwoken
+    [5735553160] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
         loadstring(game:HttpGet("https://pastebin.com/raw/jhswRtDb"))()
         -- Script logic for Game 6
