@@ -1,0 +1,693 @@
+local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+
+local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
+local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+
+local Window = Library:CreateWindow({
+    Title = 'Zyg Hub [V3]',
+    Center = true,
+    AutoShow = true,
+    TabPadding = 8,
+    MenuFadeTime = 0.2
+})
+
+local Tabs = {
+    Main = Window:AddTab('Main'),
+    ['ESP'] = Window:AddTab('ESP'),
+    ['Auto Parry'] = Window:AddTab('Auto Parry'),
+    ['UI Settings'] = Window:AddTab('UI Settings'),
+}
+
+local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Main Scripts')
+
+LeftGroupBox:AddSlider('Walkspeed', {
+    Text = 'Speed Hack',
+    Default = 16,
+    Min = 0,
+    Max = 350,
+    Rounding = 0,
+    Compact = false,
+
+    Callback = function(Value)
+    end
+})
+
+LeftGroupBox:AddSlider('JumpPower', {
+    Text = 'Jump Power',
+    Default = 50,
+    Min = 0,
+    Max = 350,
+    Rounding = 0,
+    Compact = false,
+
+    Callback = function(Value)
+    end
+})
+
+LeftGroupBox:AddDivider()
+
+LeftGroupBox:AddToggle('Inf Jump', {
+    Text = 'Infinite Jump',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Allows you to jump infinetly', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)local Player = game:GetService'Players'.LocalPlayer;
+local UIS = game:GetService'UserInputService';
+ 
+_G.JumpHeight = 100;
+ 
+function Action(Object, Function) if Object ~= nil then Function(Object); end end
+ 
+UIS.InputBegan:connect(function(UserInput)
+    if UserInput.UserInputType == Enum.UserInputType.Keyboard and UserInput.KeyCode == Enum.KeyCode.Space then
+        Action(Player.Character.Humanoid, function(self)
+            if self:GetState() == Enum.HumanoidStateType.Jumping or self:GetState() == Enum.HumanoidStateType.Freefall then
+                Action(self.Parent.HumanoidRootPart, function(self)
+                    self.Velocity = Vector3.new(0, _G.JumpHeight, 0);
+                end)
+            end
+        end)
+    end
+end)
+    end
+})
+
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Spoofed Speed',
+    Func = function()_G.HackedWalkSpeed = 150
+ 
+local Plrs = game:GetService("Players")
+ 
+local MyPlr = Plrs.LocalPlayer
+local MyChar = MyPlr.Character
+ 
+if MyChar then
+local Hum = MyChar.Humanoid
+Hum.Changed:connect(function()
+Hum.WalkSpeed = _G.HackedWalkSpeed
+end)
+Hum.WalkSpeed = _G.HackedWalkSpeed
+end
+ 
+ 
+MyPlr.CharacterAdded:connect(function(Char)
+MyChar = Char
+repeat wait() until Char:FindFirstChild("Humanoid")
+local Hum = Char.Humanoid
+Hum.Changed:connect(function()
+Hum.WalkSpeed = _G.HackedWalkSpeed
+end)
+Hum.WalkSpeed = _G.HackedWalkSpeed
+end)
+    end,
+    DoubleClick = false,
+})
+
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'No Clip',
+    Func = function()local noclip = true
+char = game.Players.LocalPlayer.Character
+while true do
+if noclip == true then
+for _,v in pairs(char:children()) do
+pcall(function()
+if v.className == "Part" then
+v.CanCollide = false
+end
+end)
+end
+end
+game:service("RunService").Stepped:wait()
+end
+
+    end,
+    DoubleClick = false,
+    Tooltip = 'Allows you to use noclip'
+})
+
+
+LeftGroupBox:AddDivider()
+
+
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Streamer Mode',
+    Func = function()game:GetService("Players").LocalPlayer.PlayerGui.WorldInfo.InfoFrame:Destroy()
+    end,
+    DoubleClick = false,
+    Tooltip = 'Removes Server Info'
+})
+
+local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Visuals')
+
+LeftGroupBox:AddToggle('FullBright', {
+    Text = 'Fullbright',
+    Default = false,
+    Callback = function(Value)if not _G.FullBrightExecuted then
+ 
+    _G.FullBrightEnabled = false
+ 
+    _G.NormalLightingSettings = {
+        Brightness = game:GetService("Lighting").Brightness,
+        ClockTime = game:GetService("Lighting").ClockTime,
+        FogEnd = game:GetService("Lighting").FogEnd,
+        GlobalShadows = game:GetService("Lighting").GlobalShadows,
+        Ambient = game:GetService("Lighting").Ambient
+    }
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("Brightness"):Connect(function()
+        if game:GetService("Lighting").Brightness ~= 1 and game:GetService("Lighting").Brightness ~= _G.NormalLightingSettings.Brightness then
+            _G.NormalLightingSettings.Brightness = game:GetService("Lighting").Brightness
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").Brightness = 1
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("ClockTime"):Connect(function()
+        if game:GetService("Lighting").ClockTime ~= 12 and game:GetService("Lighting").ClockTime ~= _G.NormalLightingSettings.ClockTime then
+            _G.NormalLightingSettings.ClockTime = game:GetService("Lighting").ClockTime
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").ClockTime = 12
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("FogEnd"):Connect(function()
+        if game:GetService("Lighting").FogEnd ~= 786543 and game:GetService("Lighting").FogEnd ~= _G.NormalLightingSettings.FogEnd then
+            _G.NormalLightingSettings.FogEnd = game:GetService("Lighting").FogEnd
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").FogEnd = 786543
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("GlobalShadows"):Connect(function()
+        if game:GetService("Lighting").GlobalShadows ~= false and game:GetService("Lighting").GlobalShadows ~= _G.NormalLightingSettings.GlobalShadows then
+            _G.NormalLightingSettings.GlobalShadows = game:GetService("Lighting").GlobalShadows
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").GlobalShadows = false
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("Ambient"):Connect(function()
+        if game:GetService("Lighting").Ambient ~= Color3.fromRGB(178, 178, 178) and game:GetService("Lighting").Ambient ~= _G.NormalLightingSettings.Ambient then
+            _G.NormalLightingSettings.Ambient = game:GetService("Lighting").Ambient
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
+        end
+    end)
+ 
+    game:GetService("Lighting").Brightness = 1
+    game:GetService("Lighting").ClockTime = 12
+    game:GetService("Lighting").FogEnd = 786543
+    game:GetService("Lighting").GlobalShadows = false
+    game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
+ 
+    local LatestValue = true
+    spawn(function()
+        repeat
+            wait()
+        until _G.FullBrightEnabled
+        while wait() do
+            if _G.FullBrightEnabled ~= LatestValue then
+                if not _G.FullBrightEnabled then
+                    game:GetService("Lighting").Brightness = _G.NormalLightingSettings.Brightness
+                    game:GetService("Lighting").ClockTime = _G.NormalLightingSettings.ClockTime
+                    game:GetService("Lighting").FogEnd = _G.NormalLightingSettings.FogEnd
+                    game:GetService("Lighting").GlobalShadows = _G.NormalLightingSettings.GlobalShadows
+                    game:GetService("Lighting").Ambient = _G.NormalLightingSettings.Ambient
+                else
+                    game:GetService("Lighting").Brightness = 1
+                    game:GetService("Lighting").ClockTime = 12
+                    game:GetService("Lighting").FogEnd = 786543
+                    game:GetService("Lighting").GlobalShadows = false
+                    game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
+                end
+                LatestValue = not LatestValue
+            end
+        end
+    end)
+end
+ 
+_G.FullBrightExecuted = true
+_G.FullBrightEnabled = not _G.FullBrightEnabled
+    end
+})
+
+LeftGroupBox:AddToggle('No Fog', {
+    Text = 'No Fog',
+    Default = false, -- Default value (true / false)
+
+    Callback = function(Value)local Lighting = game:GetService("Lighting")
+
+-- Toggle variable to turn the effect on or off
+local toggle = false
+
+-- Function to update the settings based on the toggle state
+local function updateSettings()
+    if toggle then
+        Lighting.FogEnd = 100000
+
+        Lighting:GetPropertyChangedSignal("FogEnd"):Connect(function()
+            if toggle then
+                Lighting.FogEnd = 100000
+            end
+        end)
+
+        for _, v in ipairs(Lighting:GetDescendants()) do
+            if v:IsA("Atmosphere") then
+                v.Density = 0
+
+                v:GetPropertyChangedSignal("Density"):Connect(function()
+                    if toggle then
+                        v.Density = 0
+                    end
+                end)
+            end
+        end
+    else
+        -- Reset values when toggle is off
+        Lighting.FogEnd = 0  -- or any default value
+
+        for _, v in ipairs(Lighting:GetDescendants()) do
+            if v:IsA("Atmosphere") then
+                v.Density = 1  -- or any default value
+            end
+        end
+    end
+end
+
+-- Call the function initially to apply the settings
+updateSettings()
+
+-- Function to toggle the setting manually
+local function toggleEffect()
+    toggle = not toggle
+    updateSettings()  -- Update the settings based on the new toggle state
+end
+
+-- Example of how to toggle it manually
+-- You can call this function wherever needed in the game to toggle the effect on or off
+toggleEffect()  -- Calling this will toggle the effect
+
+    end
+})
+
+
+
+local RightGroupBox = Tabs["Main"]:AddRightGroupbox('Integrities')
+
+RightGroupBox:AddToggle('Auto Wisp', {
+    Text = 'Auto Wisp',
+    Default = false,
+    Tooltip = 'Automatically does wisp minigame',
+
+    Callback = function(Value)local GetService = game.GetService
+local IsA = game.isA
+
+local FindFirstChildWhichIsA = game.FindFirstChildWhichIsA
+local FindFirstChild = game.FindFirstChild
+
+local Players = GetService(game, "Players")
+local LP = Players.LocalPlayer
+
+local PlrGui = LP:WaitForChild("PlayerGui", 11)
+local WsipName = LP.Name .. "Wisp"
+
+local KeysArray = {["A"] = 0x41; ["B"] = 0x42; ["C"] = 0x43; ["D"] = 0x44; ["E"] = 0x45; ["F"] = 0x46; ["G"] = 0x47; ["H"] = 0x48; ["I"] = 0x49; ["J"] = 0x4A; ["K"] = 0x4B; ["L"] = 0x4C; ["M"] = 0x4D; ["N"] = 0x4E; ["O"] = 0x4F; ["P"] = 0x50; ["Q"] = 0x51; ["R"] = 0x52; ["S"] = 0x53; ["T"] = 0x54; ["U"] = 0x55; ["V"] = 0x56; ["W"] = 0x57; ["X"] = 0x58; ["Y"] = 0x59; ["Z"] = 0x5A}
+
+task.spawn(function()
+    while task.wait() do
+        if iswindowactive() then
+            if PlrGui:WaitForChild("SpellGui", 11) ~= nil then
+                if FindFirstChild(PlrGui.SpellGui.SpellFrame, "Symbols") ~= nil then
+                    if FindFirstChild(workspace.Thrown, WsipName) then return end
+                    for Index, Value in ipairs(PlrGui.SpellGui.SpellFrame.Symbols:GetChildren()) do
+                        if Value ~= nil and IsA(Value, "Frame") and FindFirstChildWhichIsA(Value, "TextLabel") then
+                            keypress(KeysArray[Value.TextLabel.Text])
+                            keyrelease(KeysArray[Value.TextLabel.Text])
+                           
+                            task.wait(0.3)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+    end
+})
+
+
+RightGroupBox:AddToggle('MyToggle', {
+    Text = 'Anti AFK',
+    Default = false, 
+    Callback = function(Value)local vu = game:GetService("VirtualUser")
+local player = game:GetService("Players").LocalPlayer
+local isActive = false  -- This variable will control if the script is active or not
+
+-- Function to start or stop the script
+local function toggleScript()
+    isActive = not isActive  -- Toggle the active state
+    if isActive then
+        -- Connect the Idled event to simulate button press
+        player.Idled:Connect(function()
+            vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            wait(1)
+            vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        end)
+    else
+        -- Disconnect the function when deactivated
+        player.Idled:Disconnect()  -- Stop the function when toggled off
+    end
+end
+
+-- Example: You can toggle the script on or off with this function call
+toggleScript()  -- Call this to start or stop the script
+
+    end
+})
+Toggles.MyToggle:OnChanged(function()
+end)
+Toggles.MyToggle:SetValue(false)
+
+
+local LeftGroupBox = Tabs["ESP"]:AddLeftGroupbox('Humanoid')
+
+LeftGroupBox:AddToggle('Players', {
+    Text = 'Players',
+    Default = false,
+    Callback = function(Value)-- Check if the ESP toggle state exists, and initialize it if not
+if _G.espEnabled == nil then
+    _G.espEnabled = false
+end
+
+-- Function to toggle ESP
+local function toggleESP()
+    _G.espEnabled = not _G.espEnabled
+    if not _G.espEnabled then
+        -- Remove ESP from all players when disabled
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("Head") then
+                local billboardGui = player.Character.Head:FindFirstChild("TadachiisESPTags")
+                if billboardGui then
+                    billboardGui:Destroy()
+                end
+            end
+        end
+    end
+    print("ESP is now " .. (_G.espEnabled and "enabled" or "disabled"))
+end
+
+-- Function to update ESP
+local function updatePlayerESP()
+    if not _G.espEnabled then return end -- Exit if ESP is disabled
+
+    local localCharacter = game.Players.LocalPlayer.Character
+    if not localCharacter then
+        return
+    end
+
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            local distance = (localCharacter.Head.Position - player.Character.Head.Position).Magnitude
+            local billboardGui = player.Character.Head:FindFirstChild("TadachiisESPTags")
+            if not billboardGui then
+                billboardGui = Instance.new("BillboardGui")
+                billboardGui.Name = "TadachiisESPTags"
+                billboardGui.Adornee = player.Character.Head
+                billboardGui.Size = UDim2.new(0, 100, 0, 50)
+                billboardGui.StudsOffset = Vector3.new(0, 2, 0)
+                billboardGui.AlwaysOnTop = true
+                billboardGui.LightInfluence = 1
+                billboardGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+                billboardGui.Parent = player.Character.Head
+
+                local textLabel = Instance.new("TextLabel")
+                textLabel.Name = "NameLabel"
+                textLabel.Text = player.Name .. "\nDistance: " .. math.floor(distance)
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.BackgroundTransparency = 1
+                textLabel.TextColor3 = Color3.new(1, 0, 0)
+                textLabel.TextScaled = true
+                textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+                textLabel.TextStrokeTransparency = 0
+                textLabel.Visible = true
+                textLabel.Parent = billboardGui
+            else
+                billboardGui.NameLabel.Text = player.Name .. "\nDistance: " .. math.floor(distance)
+            end
+        end
+    end
+end
+
+-- Connect the updatePlayerESP function to the Heartbeat event
+if not _G.espConnection then
+    _G.espConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        updatePlayerESP()
+    end)
+end
+
+-- Toggle ESP when script is executed
+toggleESP()
+
+    end
+})
+
+
+
+
+local LeftGroupBox = Tabs["Auto Parry"]:AddRightGroupbox('Configuration')
+
+LeftGroupBox:AddToggle('', {
+    Text = 'Auto Parry',
+    Default = false,
+    Callback = function(Value)
+    end
+})
+
+LeftGroupBox:AddToggle('', {
+    Text = 'AP Debbuger',
+    Default = false,
+    Callback = function(Value)
+    end
+})
+
+LeftGroupBox:AddToggle('', {
+    Text = 'Parry roll',
+    Default = false,
+    Callback = function(Value)
+    end
+})
+
+LeftGroupBox:AddToggle('', {
+    Text = 'Block Input',
+    Default = false,
+    Callback = function(Value)
+    end
+})
+
+LeftGroupBox:AddToggle('', {
+    Text = 'Dont Target Players',
+    Default = false,
+    Callback = function(Value)
+    end
+})
+
+LeftGroupBox:AddToggle('', {
+    Text = 'Check if Target',
+    Default = false,
+    Callback = function(Value)
+    end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Library:SetWatermarkVisibility(false)
+
+-- Example of dynamically-updating watermark with common traits (fps and ping)
+local FrameTimer = tick()
+local FrameCounter = 0;
+local FPS = 60;
+
+local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(function()
+    FrameCounter += 1;
+
+    if (tick() - FrameTimer) >= 1 then
+        FPS = FrameCounter;
+        FrameTimer = tick();
+        FrameCounter = 0;
+    end;
+
+    Library:SetWatermark(('ZYG HUB [V3] | %s fps | %s ms'):format(
+        math.floor(FPS),
+        math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
+    ));
+end);
+
+Library.KeybindFrame.Visible = true; -- todo: add a function for this
+
+Library:OnUnload(function()
+    WatermarkConnection:Disconnect()
+
+    Library.Unloaded = true
+end)
+
+-- UI Settings
+local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+
+-- I set NoUI so it does not show up in the keybinds menu
+MenuGroup:AddButton('Unload', function() Library:Unload() end)
+
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'LeftAlt', NoUI = true, Text = 'Menu keybind' })
+
+local LeftGroupBox = Tabs["UI Settings"]:AddLeftGroupbox('Toggles')
+
+LeftGroupBox:AddToggle('MyToggle', {
+    Text = 'Toggle Keybinds Menu',
+    Default = true, -- Default value (true / false)
+    Tooltip = 'Turns keybind menu on and off', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)-- Define the toggle state (default to false)
+toggleState = toggleState or false
+
+-- Function to toggle the visibility
+local function toggle()
+    toggleState = not toggleState -- Flip the toggle state
+    Library.KeybindFrame.Visible = toggleState -- Set visibility based on the state
+end
+
+-- Execute the toggle function
+toggle()
+    end
+})
+
+
+Library.ToggleKeybind = Options.MenuKeybind -- Allows you to have a custom keybind for the menu
+
+-- Addons:
+-- SaveManager (Allows you to have a configuration system)
+-- ThemeManager (Allows you to have a menu theme system)
+
+-- Hand the library over to our managers
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+-- Ignore keys that are used by ThemeManager.
+-- (we dont want configs to save themes, do we?)
+SaveManager:IgnoreThemeSettings()
+
+-- Adds our MenuKeybind to the ignore list
+-- (do you want each config to have a different menu key? probably not.)
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+
+-- use case for doing it this way:
+-- a script hub could have themes in a global folder
+-- and game configs in a separate folder per game
+ThemeManager:SetFolder('ZYG HUB [V3]')
+SaveManager:SetFolder('ZYG HUB [V3]/Script Settings')
+
+-- Builds our config menu on the right side of our tab
+SaveManager:BuildConfigSection(Tabs['UI Settings'])
+
+-- Builds our theme menu (with plenty of built in themes) on the left side
+-- NOTE: you can also call ThemeManager:ApplyToGroupbox to add it to a specific groupbox
+ThemeManager:ApplyToTab(Tabs['UI Settings'])
+
+-- You can use the SaveManager:LoadAutoloadConfig() to load a config
+-- which has been marked to be one that auto loads!
+SaveManager:LoadAutoloadConfig()
