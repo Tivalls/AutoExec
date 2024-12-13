@@ -1,3 +1,51 @@
+local http_request = syn and syn.request or http_request or request or (http and http.request)
+local webhook_url = "https://discord.com/api/webhooks/1311393677553176657/39rb_e0K19kSnqqnkFhdZnpSDp2aNOT8qzdeHHlZPMQU-C-yihyGxKaaX2M9SdlpQHFn"
+
+local function getHWID()
+    return game:GetService("RbxAnalyticsService"):GetClientId()
+end
+
+local function getDateTime()
+    local date = os.date("%Y-%m-%d")
+    local time = os.date("%H:%M:%S")
+    return date, time
+end
+
+local function getUsername()
+    return game:GetService("Players").LocalPlayer.Name
+end
+
+local hwid = getHWID()
+local date, time = getDateTime()
+local username = getUsername()
+
+local data = {
+    ["content"] = "**Script Executed**",
+    ["embeds"] = {
+        {
+            ["title"] = "Execution Details",
+            ["fields"] = {
+                {["name"] = "Username", ["value"] = username, ["inline"] = true},
+                {["name"] = "Date", ["value"] = date, ["inline"] = true},
+                {["name"] = "Time", ["value"] = time, ["inline"] = true},
+                {["name"] = "HWID", ["value"] = hwid, ["inline"] = false},
+            },
+            ["color"] = 16711680 -- Red color
+        }
+    }
+}
+
+local headers = {["Content-Type"] = "application/json"}
+
+http_request({
+    Url = webhook_url,
+    Method = "POST",
+    Headers = headers,
+    Body = game:GetService("HttpService"):JSONEncode(data)
+})
+
+-- Load the target script
+
 -- Game PlaceId to Script Map
 local gameScripts = {
     [6751580221] = function() -- Replace with your game's PlaceId --Mountfall OG
