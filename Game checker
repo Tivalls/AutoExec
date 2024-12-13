@@ -20,31 +20,31 @@ local gameScripts = {
 
     [4111023553] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
-        loadstring(game:HttpGet("https://pastebin.com/raw/jhswRtDb"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/Zyg-Hub-V3-/refs/heads/main/Deepwoken?token=GHSAT0AAAAAACY4XKUS7JXOUPGY6D3BKHRYZ23W7XQ"))()
         -- Script logic for Game 3
     end,
 
     [6032399813] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
-        loadstring(game:HttpGet("https://pastebin.com/raw/jhswRtDb"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/Zyg-Hub-V3-/refs/heads/main/Deepwoken?token=GHSAT0AAAAAACY4XKUS7JXOUPGY6D3BKHRYZ23W7XQ"))()
         -- Script logic for Game 4
     end,
 
     [6473861193] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
-        loadstring(game:HttpGet("https://pastebin.com/raw/jhswRtDb"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/Zyg-Hub-V3-/refs/heads/main/Deepwoken?token=GHSAT0AAAAAACY4XKUS7JXOUPGY6D3BKHRYZ23W7XQ"))()
         -- Script logic for Game 5
     end,
 
     [5735553160] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
-        loadstring(game:HttpGet("https://pastebin.com/raw/jhswRtDb"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/Zyg-Hub-V3-/refs/heads/main/Deepwoken?token=GHSAT0AAAAAACY4XKUS7JXOUPGY6D3BKHRYZ23W7XQ"))()
         -- Script logic for Game 6
     end,
 
     [8668476218] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
-        loadstring(game:HttpGet("https://pastebin.com/raw/jhswRtDb"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/Zyg-Hub-V3-/refs/heads/main/Deepwoken?token=GHSAT0AAAAAACY4XKUS7JXOUPGY6D3BKHRYZ23W7XQ"))()
         -- Script logic for Game 7
     end,
 
