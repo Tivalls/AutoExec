@@ -6,7 +6,7 @@ local gameScripts = {
         -- Script logic for Game 0
     end,
 
-    [6751580221] = function() -- Replace with your game's PlaceId --Fisch
+    [16732694052] = function() -- Replace with your game's PlaceId --Fisch
         print("Running Script for Fisch")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch"))()
         -- Script logic for Game 1
