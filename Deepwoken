@@ -392,7 +392,7 @@ Toggles.MyToggle:SetValue(false)
 
 
 
-LeftGroupBox:AddToggle('MyToggle', {
+RightGroupBox:AddToggle('MyToggle', {
     Text = 'Proximity Prompt',
     Default = false,
     Tooltip = 'If a player is close to you a gui shows',
