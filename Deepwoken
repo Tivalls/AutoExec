@@ -389,6 +389,93 @@ Toggles.MyToggle:OnChanged(function()
 end)
 Toggles.MyToggle:SetValue(false)
 
+
+
+
+LeftGroupBox:AddToggle('MyToggle', {
+    Text = 'Proximity Prompt',
+    Default = false,
+    Tooltip = 'If a player is close to you a gui shows',
+
+    Callback = function(Value)local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "ProximityAlert"
+gui.Parent = player.PlayerGui
+
+local infoFrame = Instance.new("Frame")
+infoFrame.Size = UDim2.new(0, 300, 0, 100)
+infoFrame.Position = UDim2.new(0.5, -150, 0.8, 0)
+infoFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+infoFrame.Visible = false
+infoFrame.Parent = gui
+
+local usernameLabel = Instance.new("TextLabel")
+usernameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+usernameLabel.Position = UDim2.new(0, 0, 0, 0)
+usernameLabel.BackgroundTransparency = 1
+usernameLabel.TextColor3 = Color3.new(1, 1, 1)
+usernameLabel.Font = Enum.Font.SourceSans
+usernameLabel.TextScaled = true
+usernameLabel.Parent = infoFrame
+
+local distanceLabel = Instance.new("TextLabel")
+distanceLabel.Size = UDim2.new(1, 0, 0.5, 0)
+distanceLabel.Position = UDim2.new(0, 0, 0.5, 0)
+distanceLabel.BackgroundTransparency = 1
+distanceLabel.TextColor3 = Color3.new(1, 1, 1)
+distanceLabel.Font = Enum.Font.SourceSans
+distanceLabel.TextScaled = true
+distanceLabel.Parent = infoFrame
+
+local isEnabled = true -- Toggles script functionality
+
+local function updateProximity()
+    if not isEnabled then
+        infoFrame.Visible = false
+        return
+    end
+    
+    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local otherRootPart = otherPlayer.Character.HumanoidRootPart
+            local distance = (humanoidRootPart.Position - otherRootPart.Position).Magnitude
+            
+            if distance <= 500 then
+                usernameLabel.Text = "Player: " .. otherPlayer.Name
+                distanceLabel.Text = "Distance: " .. math.floor(distance) .. " studs"
+                infoFrame.Visible = true
+                return
+            end
+        end
+    end
+    infoFrame.Visible = false
+end
+
+local function toggleProximityAlert(state)
+    isEnabled = state
+    if not isEnabled then
+        infoFrame.Visible = false
+    end
+end
+
+game:GetService("RunService").RenderStepped:Connect(updateProximity)
+
+-- Example usage of toggleProximityAlert
+-- Call toggleProximityAlert(true) to enable or toggleProximityAlert(false) to disable the functionality.
+
+    end
+})
+
+
+
+
+RightGroupBox:AddDivider()
+
+
 local MyButton = RightGroupBox:AddButton({
     Text = 'ChatLogger',
     Func = function()local Config = {
