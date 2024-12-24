@@ -389,7 +389,7 @@ Toggles.MyToggle:OnChanged(function()
 end)
 Toggles.MyToggle:SetValue(false)
 
-local MyButton = LeftGroupBox:AddButton({
+local MyButton = RightGroupBox:AddButton({
     Text = 'ChatLogger',
     Func = function()local Config = {
     enabled = true,
