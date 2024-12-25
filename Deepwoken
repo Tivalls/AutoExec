@@ -129,6 +129,74 @@ end
 
 LeftGroupBox:AddDivider()
 
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'ChatLogger',
+    Func = function()local Config = {
+    enabled = true,
+    spyOnMyself = true,
+    public = false,
+    publicItalics = true
+}
+
+local PrivateProperties = {
+    Color = Color3.fromRGB(0, 255, 255),
+    Font = Enum.Font.SourceSansBold,
+    TextSize = 18
+}
+
+local StarterGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local saymsg = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest")
+local getmsg = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("OnMessageDoneFiltering")
+local instance = (_G.chatSpyInstance or 0) + 1
+_G.chatSpyInstance = instance
+
+local function onChatted(p, msg)
+    if _G.chatSpyInstance == instance then
+        if p == player and msg:lower():sub(1, 4) == "/spy" then
+            Config.enabled = not Config.enabled
+        elseif Config.enabled and (Config.spyOnMyself or p ~= player) then
+            msg = msg:gsub("[\n\r]", ''):gsub("\t", ' '):gsub("[ ]+", ' ')
+            local hidden = true
+            local conn = getmsg.OnClientEvent:Connect(function(packet, channel)
+                if packet.SpeakerUserId == p.UserId and packet.Message == msg:sub(#msg - #packet.Message + 1) and (channel == "All" or (channel == "Team" and not Config.public and Players[packet.FromSpeaker].Team == player.Team)) then
+                    hidden = false
+                end
+            end)
+            wait(1)
+            conn:Disconnect()
+            if hidden and Config.enabled then
+                if Config.public then
+                    saymsg:FireServer((Config.publicItalics and "/me " or '') .. "{SPY} [" .. p.Name .. "]: " .. msg, "All")
+                else
+                    PrivateProperties.Text = "{SPY} [" .. p.Name .. "]: " .. msg
+                    StarterGui:SetCore("ChatMakeSystemMessage", PrivateProperties)
+                end
+            end
+        end
+    end
+end
+
+for _, p in ipairs(Players:GetPlayers()) do
+    p.Chatted:Connect(function(msg) onChatted(p, msg) end)
+end
+
+Players.PlayerAdded:Connect(function(p)
+    p.Chatted:Connect(function(msg) onChatted(p, msg) end)
+end)
+
+PrivateProperties.Text = ""
+StarterGui:SetCore("ChatMakeSystemMessage", PrivateProperties)
+local chatFrame = player:WaitForChild("PlayerGui"):WaitForChild("Chat"):WaitForChild("Frame")
+chatFrame.ChatChannelParentFrame.Visible = true
+chatFrame.ChatBarParentFrame.Position = chatFrame.ChatChannelParentFrame.Position + UDim2.new(0, 0, chatFrame.ChatChannelParentFrame.Size.Y.Scale, chatFrame.ChatChannelParentFrame.Size.Y.Offset)
+    end,
+    DoubleClick = false,
+    Tooltip = 'Allows you to see the roblox chat history'
+})
+
+
 
 local MyButton = LeftGroupBox:AddButton({
     Text = 'Streamer Mode',
@@ -480,80 +548,46 @@ game:GetService("RunService").RenderStepped:Connect(updateProximity)
 
 
 
-RightGroupBox:AddDivider()
+local RightGroupBox = Tabs["Main"]:AddRightGroupbox('Humanoid')
 
+RightGroupBox:AddToggle('MyToggle', {
+    Text = 'Mob AI Breaker',
+    Default = false,
+    Tooltip = 'Breaks how mobs agro you',
 
-local MyButton = RightGroupBox:AddButton({
-    Text = 'ChatLogger',
-    Func = function()local Config = {
-    enabled = true,
-    spyOnMyself = true,
-    public = false,
-    publicItalics = true
-}
+    Callback = function(Value)local userInputService = game:GetService("UserInputService")
+local runService = game:GetService("RunService")
+local localPlayer = game:GetService("Players").LocalPlayer
+local downwardsVector = Vector3.new(0, -1000, 0)
 
-local PrivateProperties = {
-    Color = Color3.fromRGB(0, 255, 255),
-    Font = Enum.Font.SourceSansBold,
-    TextSize = 18
-}
+local toggle = false -- Initial state
+local heartbeatConnection -- Variable to store the Heartbeat connection
 
-local StarterGui = game:GetService("StarterGui")
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local saymsg = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest")
-local getmsg = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("OnMessageDoneFiltering")
-local instance = (_G.chatSpyInstance or 0) + 1
-_G.chatSpyInstance = instance
-
-local function onChatted(p, msg)
-    if _G.chatSpyInstance == instance then
-        if p == player and msg:lower():sub(1, 4) == "/spy" then
-            Config.enabled = not Config.enabled
-        elseif Config.enabled and (Config.spyOnMyself or p ~= player) then
-            msg = msg:gsub("[\n\r]", ''):gsub("\t", ' '):gsub("[ ]+", ' ')
-            local hidden = true
-            local conn = getmsg.OnClientEvent:Connect(function(packet, channel)
-                if packet.SpeakerUserId == p.UserId and packet.Message == msg:sub(#msg - #packet.Message + 1) and (channel == "All" or (channel == "Team" and not Config.public and Players[packet.FromSpeaker].Team == player.Team)) then
-                    hidden = false
-                end
-            end)
-            wait(1)
-            conn:Disconnect()
-            if hidden and Config.enabled then
-                if Config.public then
-                    saymsg:FireServer((Config.publicItalics and "/me " or '') .. "{SPY} [" .. p.Name .. "]: " .. msg, "All")
-                else
-                    PrivateProperties.Text = "{SPY} [" .. p.Name .. "]: " .. msg
-                    StarterGui:SetCore("ChatMakeSystemMessage", PrivateProperties)
-                end
+-- Toggle function
+function toggleScript()
+    toggle = not toggle
+    if toggle then
+        -- Connect the Heartbeat function
+        heartbeatConnection = runService.Heartbeat:Connect(function()
+            local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.Velocity = (hrp.CFrame.LookVector.Unit * 20) + downwardsVector
             end
+        end)
+    else
+        -- Disconnect the Heartbeat function
+        if heartbeatConnection then
+            heartbeatConnection:Disconnect()
+            heartbeatConnection = nil
         end
     end
 end
 
-for _, p in ipairs(Players:GetPlayers()) do
-    p.Chatted:Connect(function(msg) onChatted(p, msg) end)
-end
+-- Call this function to toggle the script on/off
+toggleScript() -- Example: Start as toggled on
 
-Players.PlayerAdded:Connect(function(p)
-    p.Chatted:Connect(function(msg) onChatted(p, msg) end)
-end)
-
-PrivateProperties.Text = ""
-StarterGui:SetCore("ChatMakeSystemMessage", PrivateProperties)
-local chatFrame = player:WaitForChild("PlayerGui"):WaitForChild("Chat"):WaitForChild("Frame")
-chatFrame.ChatChannelParentFrame.Visible = true
-chatFrame.ChatBarParentFrame.Position = chatFrame.ChatChannelParentFrame.Position + UDim2.new(0, 0, chatFrame.ChatChannelParentFrame.Size.Y.Scale, chatFrame.ChatChannelParentFrame.Size.Y.Offset)
-    end,
-    DoubleClick = false,
-    Tooltip = 'Allows you to see the roblox chat history'
+    end
 })
-
-
-
-
-
 
 
 
