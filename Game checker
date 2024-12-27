@@ -12,7 +12,7 @@ local gameScripts = {
         -- Script logic for Game 1
     end,
 
-		[16732694052] = function() -- Replace with your game's PlaceId --Ghoul://Re
+		[91797414023830] = function() -- Replace with your game's PlaceId --Ghoul://Re
         print("Running Script for Ghoul://Re")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch"))()
         -- Script logic for Game 2
