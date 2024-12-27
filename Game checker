@@ -12,10 +12,22 @@ local gameScripts = {
         -- Script logic for Game 1
     end,
 
+		[16732694052] = function() -- Replace with your game's PlaceId --Ghoul://Re
+        print("Running Script for Ghoul://Re")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch"))()
+        -- Script logic for Game 2
+    end
+
+		[16732694052] = function() -- Replace with your game's PlaceId --Ghoul://Re
+        print("Running Script for Ghoul://Re")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch"))()
+        -- Script logic for Game 2
+    end,
+
     [6751580221] = function() -- Replace with your game's PlaceId --BS2
         print("Running Script for Blood Samurai 2")
         loadstring(game:HttpGet("https://pastebin.com/raw/mV4HLUpd"))()
-        -- Script logic for Game 2
+        -- Script logic for Game 3
     end,
 
     [4111023553] = function() -- Replace with another PlaceId --Deepwoken
@@ -27,43 +39,43 @@ local gameScripts = {
     [12522889886] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken"))()
-        -- Script logic for Game 4
+        -- Script logic for Game 3
     end,
 
     [6832944305] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken"))()
-        -- Script logic for Game 5
+        -- Script logic for Game 3
     end,
 
     [6032399813] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken"))()
-        -- Script logic for Game 6
+        -- Script logic for Game 3
     end,
 
     [6473861193] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken"))()
-        -- Script logic for Game 7
+        -- Script logic for Game 3
     end,
 
     [5735553160] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken"))()
-        -- Script logic for Game 8
+        -- Script logic for Game 3
     end,
 
     [8668476218] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken"))()
-        -- Script logic for Game 9
+        -- Script logic for Game 3
     end,
 
     [16004121360] = function() -- Another PlaceId --Mountfall
         print("Running Script for Mountfall: Descent")
         loadstring(game:HttpGet("https://pastebin.com/raw/TiTbnvz8"))()
-        -- Script logic for Game 10
+        -- Script logic for Game 4
     end
 }
 
