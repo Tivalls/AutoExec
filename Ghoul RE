@@ -11,7 +11,7 @@ local Window = Library:CreateWindow({
     TabPadding = 8,
     MenuFadeTime = 0.2
 })
---91797414023830, 7236834599613
+
 local Tabs = {
     Main = Window:AddTab('Main'),
     ['ESP'] = Window:AddTab('ESP'),
