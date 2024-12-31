@@ -557,7 +557,19 @@ game:GetService("RunService").RenderStepped:Connect(updateProximity)
     end
 })
 
+RightGroupBox:AddToggle('No KillBricks', {
+    Text = 'AutoLoot Chest',
+    Default = false,
+    Tooltip = 'Automatically loots chests for you',
+    Callback = function(Value)while wait() do
+local args = {
+    [1] = "LOOT_ALL"
+}
 
+game:GetService("Players").LocalPlayer.PlayerGui.ChoicePrompt.Choice:FireServer(unpack(args))
+end
+    end
+})
 
 
 local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Removals')
@@ -565,6 +577,7 @@ local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Removals')
 LeftGroupBox:AddToggle('No KillBricks', {
     Text = 'No Kill Bricks',
     Default = false,
+    Tooltip = 'Removes all killbricks',
     Callback = function(Value)workspace.Layer2Floor1.Layer2KillbrickModel:Destroy()
     end
 })
@@ -572,6 +585,7 @@ LeftGroupBox:AddToggle('No KillBricks', {
 LeftGroupBox:AddToggle('No Acid', {
     Text = 'No Acid',
     Default = false,
+    Tooltip = 'Makes it so you dont take acid damage',
     Callback = function(Value)game:GetService("ReplicatedStorage").Requests.AcidCheck:FireServer():Destroy()
     end
 })
