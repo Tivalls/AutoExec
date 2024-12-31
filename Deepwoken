@@ -383,7 +383,7 @@ toggleEffect()  -- Calling this will toggle the effect
 
 local RightGroupBox = Tabs["Main"]:AddRightGroupbox('Integrities')
 
-local MyButton = LeftGroupBox:AddButton({
+local MyButton = RightGroupBox:AddButton({
     Text = 'Enable all Modifiers',
     Func = function()local args = {
     [1] = "All"
