@@ -569,7 +569,12 @@ LeftGroupBox:AddToggle('No KillBricks', {
     end
 })
 
-
+LeftGroupBox:AddToggle('No Acid', {
+    Text = 'No Acid',
+    Default = false,
+    Callback = function(Value)game:GetService("ReplicatedStorage").Requests.AcidCheck:FireServer():Destroy()
+    end
+})
 
 
 
