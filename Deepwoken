@@ -560,6 +560,30 @@ game:GetService("RunService").RenderStepped:Connect(updateProximity)
 
 
 
+local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Removals')
+
+LeftGroupBox:AddToggle('No KillBricks', {
+    Text = 'No Kill Bricks',
+    Default = false,
+    Callback = function(Value)workspace.Layer2Floor1.Layer2KillbrickModel:Destroy()
+    end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 local RightGroupBox = Tabs["Main"]:AddRightGroupbox('Humanoid')
 
 RightGroupBox:AddToggle('MyToggle', {
