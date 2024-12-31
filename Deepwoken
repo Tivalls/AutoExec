@@ -383,6 +383,18 @@ toggleEffect()  -- Calling this will toggle the effect
 
 local RightGroupBox = Tabs["Main"]:AddRightGroupbox('Integrities')
 
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Enable all Modifiers',
+    Func = function()local args = {
+    [1] = "All"
+}
+
+game:GetService("ReplicatedStorage").Requests.MetaModifier:FireServer(unpack(args))
+    end,
+    DoubleClick = true,
+    Tooltip = 'Enables all Modifiers (MUST BE IN CREATION MENU)'
+})
+
 RightGroupBox:AddToggle('Auto Wisp', {
     Text = 'Auto Wisp',
     Default = false,
