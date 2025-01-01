@@ -47,6 +47,39 @@ LeftGroupBox:AddSlider('JumpPower', {
 
 LeftGroupBox:AddDivider()
 
+LeftGroupBox:AddToggle('No Fall Damage', {
+    Text = 'No Fall,
+    Default = false,
+    Callback = function(Value)-- Toggleable no-fall-damage script
+_G.Nofalldamage = _G.Nofalldamage or false
+
+_G.ToggleNoFallDamage = function()
+    _G.Nofalldamage = not _G.Nofalldamage
+    if _G.Nofalldamage then
+        local newpart = Instance.new("Part", workspace)
+        newpart.Name = "nofalldamagebrrrpart"
+        newpart.Transparency = 1
+        newpart.CanCollide = true
+        newpart.Anchored = true
+        game:GetService("RunService"):BindToRenderStep("Esp", Enum.RenderPriority.Last.Value, function()
+            pcall(function()
+                workspace.nofalldamagebrrrpart.Position = game.Players.LocalPlayer.Character.PrimaryPart.Position - Vector3.new(0, 6, 0)
+            end)
+        end)
+    else
+        if workspace:FindFirstChild("nofalldamagebrrrpart") then
+            workspace.nofalldamagebrrrpart:Destroy()
+        end
+        game:GetService("RunService"):UnbindFromRenderStep("Esp")
+    end
+end
+
+-- Call the function to toggle
+_G.ToggleNoFallDamage()
+
+    end
+})
+
 LeftGroupBox:AddToggle('Inf Jump', {
     Text = 'Infinite Jump',
     Default = false, -- Default value (true / false)
