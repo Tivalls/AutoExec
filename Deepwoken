@@ -48,7 +48,7 @@ LeftGroupBox:AddSlider('JumpPower', {
 LeftGroupBox:AddDivider()
 
 LeftGroupBox:AddToggle('No Fall Damage', {
-    Text = 'No Fall,
+    Text = 'No Fall',
     Default = false,
     Callback = function(Value)-- Toggleable no-fall-damage script
 _G.Nofalldamage = _G.Nofalldamage or false
