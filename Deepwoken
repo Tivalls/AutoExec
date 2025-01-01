@@ -980,6 +980,20 @@ end
 
 
 
+
+RightGroupBox:AddToggle('Anchor Body/Torso', {
+    Text = 'Anchor Body',
+    Default = false,
+    Callback = function(Value)local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local torso = character:WaitForChild("Torso")
+
+torso.Anchored = not torso.Anchored
+    end
+})
+
+
+
 local LeftGroupBox = Tabs["ESP"]:AddLeftGroupbox('Humanoid')
 
 LeftGroupBox:AddToggle('Players', {
