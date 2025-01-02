@@ -1203,7 +1203,6 @@ LeftGroupBox:AddToggle('', {
 
 
 
-Library:SetWatermarkVisibility(false)
 
 -- Example of dynamically-updating watermark with common traits (fps and ping)
 local FrameTimer = tick()
@@ -1219,13 +1218,13 @@ local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(
         FrameCounter = 0;
     end;
 
-    Library:SetWatermark(('ZYG HUB [V3] | %s fps | %s ms'):format(
+    Library:SetWatermark(('ZYG HUB [V3] | %s fps | %s ping'):format(
         math.floor(FPS),
         math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
     ));
 end);
 
-Library.KeybindFrame.Visible = true; -- todo: add a function for this
+
 
 Library:OnUnload(function()
     WatermarkConnection:Disconnect()
@@ -1243,27 +1242,41 @@ MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'LeftAlt
 
 local LeftGroupBox = Tabs["UI Settings"]:AddLeftGroupbox('Toggles')
 
-LeftGroupBox:AddToggle('MyToggle', {
+LeftGroupBox:AddToggle('Keybinds Toggle', {
     Text = 'Toggle Keybinds Menu',
-    Default = true, -- Default value (true / false)
-    Tooltip = 'Turns keybind menu on and off', -- Information shown when you hover over the toggle
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Turns keybind menu on and off', 
 
-    Callback = function(Value)-- Define the toggle state (default to false)
+    Callback = function(Value)
 toggleState = toggleState or false
 
--- Function to toggle the visibility
 local function toggle()
-    toggleState = not toggleState -- Flip the toggle state
-    Library.KeybindFrame.Visible = toggleState -- Set visibility based on the state
+    toggleState = not toggleState
+    Library.KeybindFrame.Visible = toggleState 
 end
 
--- Execute the toggle function
 toggle()
     end
 })
 
+LeftGroupBox:AddToggle('Watermark Toggle', {
+    Text = 'Toggle Watermark',
+    Default = false, 
+    Tooltip = 'Turns Watermark on and off', 
 
-Library.ToggleKeybind = Options.MenuKeybind -- Allows you to have a custom keybind for the menu
+    Callback = function(Value)
+toggleState = toggleState or false
+
+local function toggle()
+    toggleState = not toggleState 
+    Library.SetWatermarkVisibility = toggleState 
+end
+
+toggle()
+    end
+})
+
+Library.ToggleKeybind = Options.MenuKeybind
 
 -- Addons:
 -- SaveManager (Allows you to have a configuration system)
