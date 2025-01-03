@@ -138,29 +138,7 @@ end)
 })
 
 local MyButton = LeftGroupBox:AddButton({
-    Text = 'No Clip',
-    Func = function()local noclip = true
-char = game.Players.LocalPlayer.Character
-while true do
-if noclip == true then
-for _,v in pairs(char:children()) do
-pcall(function()
-if v.className == "Part" then
-v.CanCollide = false
-end
-end)
-end
-end
-game:service("RunService").Stepped:wait()
-end
-
-    end,
-    DoubleClick = false,
-    Tooltip = 'Allows you to use noclip'
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Spoofed Speed',
+    Text = 'Regular Speed',
     Func = function()_G.HackedWalkSpeed = 16
  
 local Plrs = game:GetService("Players")
