@@ -670,7 +670,7 @@ LeftGroupBox:AddToggle('No Acid', {
     Text = 'No Acid',
     Default = false,
     Tooltip = 'Makes it so you dont take acid damage',
-    Callback = function(Value)game:GetService("ReplicatedStorage").Requests.AcidCheck:FireServer():Destroy()
+    Callback = function(Value)game:GetService("ReplicatedStorage").Requests.AcidCheck:Destroy()
     end
 })
 
