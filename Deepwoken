@@ -1253,60 +1253,95 @@ local LeftGroupBox = Tabs["UI Settings"]:AddLeftGroupbox('Toggles')
 
 LeftGroupBox:AddToggle('Deepwoken Mod Join', {
     Text = 'Toggle Notification On Mod Join',
-    Default = true, -- Default value (true / false)
+    Default = true,
     Tooltip = 'Notification On mod join', 
 
-    Callback = function(Value)function Alarm()
-	local Sound = Instance.new("Sound",game.Players.LocalPlayer.Character.Head)
-	Sound.SoundId = "rbxassetid://134569069127046"
-	Sound.Volume = 3
-	Sound:Play()
-	task.wait(5)
-	Sound:Destroy()
+    Callback = function(Value)-- Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local GroupId = 5212858 -- Replace with the group ID
+
+-- Setup RemoteEvent
+local RemoteEvent = Instance.new("RemoteEvent")
+RemoteEvent.Name = "PlayerGroupEvent"
+RemoteEvent.Parent = ReplicatedStorage
+
+-- Function to create a message GUI
+local function createMessage(player, text)
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "GroupNotification"
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0.3, 0, 0.1, 0)
+    frame.Position = UDim2.new(0.35, 0, 0.8, 0)
+    frame.BackgroundColor3 = Color3.new(0, 0, 0)
+    frame.BackgroundTransparency = 0.5
+    frame.Parent = screenGui
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Text = text
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.SourceSans
+    label.TextScaled = true
+    label.Parent = frame
+
+    -- Auto-remove GUI after 5 seconds
+    task.delay(5, function()
+        screenGui:Destroy()
+    end)
 end
 
-task.spawn(function()
-	for _, Player in next, game.Players:GetPlayers() do
-		if Player:GetRankInGroup(5212858) > 0 then
-			game.StarterGui:SetCore("SendNotification",{
-				Title = "A Moderator Joined",
-				Text = Player.Name.." Joined",
-				Icon = nil,
-				Duration = "20",
-			})
-			Alarm()
-		end
-	end
+-- Player added event
+Players.PlayerAdded:Connect(function(player)
+    player:GetPropertyChangedSignal("UserId"):Wait()
+
+    task.defer(function()
+        local success, role = pcall(function()
+            return player:GetRoleInGroup(GroupId)
+        end)
+        
+        if success and role ~= "Guest" then
+            local joinTime = os.date("%X")
+            RemoteEvent:FireAllClients(player.Name, role, joinTime, "join")
+        end
+    end)
 end)
 
-task.spawn(function()
-	game.Players.PlayerAdded:Connect(function(Player)
-		if Player:GetRankInGroup(5212858) > 0 then
-			game.StarterGui:SetCore("SendNotification",{
-				Title = "A Moderator Joined",
-				Text = Player.Name.." Joined",
-				Icon = nil,
-				Duration = "5",
-			})
-			Alarm()
-		end
-	end)
+-- Player removed event
+Players.PlayerRemoving:Connect(function(player)
+    local success, role = pcall(function()
+        return player:GetRoleInGroup(GroupId)
+    end)
+
+    if success and role ~= "Guest" then
+        local leaveTime = os.date("%X")
+        RemoteEvent:FireAllClients(player.Name, role, leaveTime, "leave")
+    end
 end)
 
-task.spawn(function()
-	game.Players.PlayerRemoving:Connect(function(Player)
-		if Player:GetRankInGroup(5212858) > 0 then
-			game.StarterGui:SetCore("SendNotification",{
-				Title = "A Moderator Left",
-				Text = Player.Name.." Left",
-				Icon = nil,
-				Duration = "5",
-			})
-		end
-	end)
+-- Client-Side GUI Handling
+RemoteEvent.OnClientEvent:Connect(function(playerName, role, time, eventType)
+    local localPlayer = Players.LocalPlayer
+    if localPlayer then
+        if eventType == "join" then
+            createMessage(localPlayer, playerName .. " (" .. role .. ") joined at " .. time)
+        elseif eventType == "leave" then
+            createMessage(localPlayer, playerName .. " (" .. role .. ") left at " .. time)
+        end
+    end
 end)
+
     end
 })
+
+
+
+
+
+
 
 LeftGroupBox:AddToggle('Keybinds Toggle', {
     Text = 'Toggle Keybinds Menu',
@@ -1324,6 +1359,12 @@ end
 toggle()
     end
 })
+
+
+
+
+
+
 
 Library.ToggleKeybind = Options.MenuKeybind
 
