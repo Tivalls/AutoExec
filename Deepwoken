@@ -192,20 +192,20 @@ while _G.Chat_log do
     Square2_Drawing.Transparency = 0.5
     Square2_Drawing.Visible = true
     Square2_Drawing.Filled = true
-    Square2_Drawing.Color = Color3.fromHSV(tick() * 128 % 255/255, 1, 0.75)
+    Square2_Drawing.Color = Color3.new(1,1,1)
     Square2_Drawing.ZIndex = Square_Drawing.ZIndex - 1
     
     Square_Drawing.Transparency = 0.25
     Square_Drawing.Visible = true
     Square_Drawing.Filled = true
-    Square_Drawing.Color = Color3.fromHSV(tick() * 128 % 255/255, 1, 0.75)
+    Square_Drawing.Color = Color3.new(1,1,1)
     Square_Drawing.ZIndex = Text_Drawing.ZIndex - 1
     
     Text_Drawing.Position = Square_Drawing.Position
     Text_Drawing.Size = 18
     Text_Drawing.Text = Buffer
     Text_Drawing.Outline = false
-    Text_Drawing.Color = Color3.new(1,1,1)
+    Text_Drawing.Color = Color3.new(0,0,0)
     Text_Drawing.OutlineColor = Color3.new(0,0,0)
     Text_Drawing.Transparency = 1
     Text_Drawing.Visible = true
