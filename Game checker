@@ -109,7 +109,11 @@ local gameScripts = {
 
     [4111023553] = function() -- Replace with another PlaceId --Deepwoken
         print("Running Script for Deepwoken")
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken"))()
+        game:GetService("StarterGui"):SetCore("SendNotification",{
+	Title = "ZYG HUB [V3]", -- Required
+	Text = "Cannot Execute Script in the lobby, Please join a server.", -- Required
+	Icon = "rbxassetid://1234567890" -- Optional
+})
         -- Script logic for Game 3
     end,
 
