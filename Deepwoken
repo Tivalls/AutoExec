@@ -25,11 +25,36 @@ LeftGroupBox:AddSlider('Walkspeed', {
     Text = 'Speed Hack',
     Default = 16,
     Min = 0,
-    Max = 350,
+    Max = 275,
     Rounding = 0,
     Compact = false,
 
     Callback = function(Value)
+    _G.HackedWalkSpeed = (Value)
+ 
+local Plrs = game:GetService("Players")
+ 
+local MyPlr = Plrs.LocalPlayer
+local MyChar = MyPlr.Character
+ 
+if MyChar then
+local Hum = MyChar.Humanoid
+Hum.Changed:connect(function()
+Hum.WalkSpeed = _G.HackedWalkSpeed
+end)
+Hum.WalkSpeed = _G.HackedWalkSpeed
+end
+ 
+ 
+MyPlr.CharacterAdded:connect(function(Char)
+MyChar = Char
+repeat wait() until Char:FindFirstChild("Humanoid")
+local Hum = Char.Humanoid
+Hum.Changed:connect(function()
+Hum.WalkSpeed = _G.HackedWalkSpeed
+end)
+Hum.WalkSpeed = _G.HackedWalkSpeed
+end)
     end
 })
 
@@ -37,11 +62,36 @@ LeftGroupBox:AddSlider('JumpPower', {
     Text = 'Jump Power',
     Default = 50,
     Min = 0,
-    Max = 350,
+    Max = 260,
     Rounding = 0,
     Compact = false,
 
     Callback = function(Value)
+    _G.HackedJumpPower = (Value)
+ 
+local Plrs = game:GetService("Players")
+ 
+local MyPlr = Plrs.LocalPlayer
+local MyChar = MyPlr.Character
+ 
+if MyChar then
+local Hum = MyChar.Humanoid
+Hum.Changed:connect(function()
+Hum.JumpPower = _G.HackedJumpPower
+end)
+Hum.JumpPower = _G.HackedJumpPower
+end
+ 
+ 
+MyPlr.CharacterAdded:connect(function(Char)
+MyChar = Char
+repeat wait() until Char:FindFirstChild("Humanoid")
+local Hum = Char.Humanoid
+Hum.Changed:connect(function()
+Hum.JumpPower = _G.HackedJumpPower
+end)
+Hum.JumpPower = _G.HackedJumpPower
+end)
     end
 })
 
