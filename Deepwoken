@@ -1242,6 +1242,63 @@ MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'LeftAlt
 
 local LeftGroupBox = Tabs["UI Settings"]:AddLeftGroupbox('Toggles')
 
+LeftGroupBox:AddToggle('Deepwoken Mod Join', {
+    Text = 'Toggle Notification On Mod Join',
+    Default = true, -- Default value (true / false)
+    Tooltip = 'Notification On mod join', 
+
+    Callback = function(Value)function Alarm()
+	local Sound = Instance.new("Sound",game.Players.LocalPlayer.Character.Head)
+	Sound.SoundId = "rbxassetid://134569069127046"
+	Sound.Volume = 3
+	Sound:Play()
+	task.wait(5)
+	Sound:Destroy()
+end
+
+task.spawn(function()
+	for _, Player in next, game.Players:GetPlayers() do
+		if Player:GetRankInGroup(5212858) > 0 then
+			game.StarterGui:SetCore("SendNotification",{
+				Title = "A Moderator Joined",
+				Text = Player.Name.." Joined",
+				Icon = nil,
+				Duration = "20",
+			})
+			Alarm()
+		end
+	end
+end)
+
+task.spawn(function()
+	game.Players.PlayerAdded:Connect(function(Player)
+		if Player:GetRankInGroup(5212858) > 0 then
+			game.StarterGui:SetCore("SendNotification",{
+				Title = "A Moderator Joined",
+				Text = Player.Name.." Joined",
+				Icon = nil,
+				Duration = "5",
+			})
+			Alarm()
+		end
+	end)
+end)
+
+task.spawn(function()
+	game.Players.PlayerRemoving:Connect(function(Player)
+		if Player:GetRankInGroup(5212858) > 0 then
+			game.StarterGui:SetCore("SendNotification",{
+				Title = "A Moderator Left",
+				Text = Player.Name.." Left",
+				Icon = nil,
+				Duration = "5",
+			})
+		end
+	end)
+end)
+    end
+})
+
 LeftGroupBox:AddToggle('Keybinds Toggle', {
     Text = 'Toggle Keybinds Menu',
     Default = false, -- Default value (true / false)
@@ -1253,23 +1310,6 @@ toggleState = toggleState or false
 local function toggle()
     toggleState = not toggleState
     Library.KeybindFrame.Visible = toggleState 
-end
-
-toggle()
-    end
-})
-
-LeftGroupBox:AddToggle('Watermark Toggle', {
-    Text = 'Toggle Watermark',
-    Default = false, 
-    Tooltip = 'Turns Watermark on and off', 
-
-    Callback = function(Value)
-toggleState = toggleState or false
-
-local function toggle()
-    toggleState = not toggleState 
-    Library.SetWatermarkVisibility = toggleState 
 end
 
 toggle()
