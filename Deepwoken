@@ -290,6 +290,18 @@ local MyButton = LeftGroupBox:AddButton({
     Tooltip = 'Removes Server Info'
 })
 
+LeftGroupBox:AddSlider('Grapics Slider', {
+    Text = 'Graphics settings',
+    Default = 5,
+    Min = 0,
+    Max = 10,
+    Rounding = 0,
+    Compact = false,
+
+    Callback = function(Value)settings().Rendering.QualityLevel = (Value)
+    end
+})
+
 local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Visuals')
 
 LeftGroupBox:AddToggle('FullBright', {
