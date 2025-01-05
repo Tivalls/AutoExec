@@ -1,1014 +1,1060 @@
-local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 
-local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
-local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
-local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 
-local Window = Library:CreateWindow({
-    -- Set Center to true if you want the menu to appear in the center
-    -- Set AutoShow to true if you want the menu to appear when it is created
-    -- Position and Size are also valid options here
-    -- but you do not need to define them unless you are changing them :)
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
 
-    Title = 'Zyg Hub [V3]',
-    Center = true,
-    AutoShow = true,
-    TabPadding = 8,
-    MenuFadeTime = 0.2
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+local DeviceType = game:GetService("UserInputService").TouchEnabled and "Mobile" or "PC"
+if DeviceType == "Mobile" then
+    local ClickButton = Instance.new("ScreenGui")
+    local MainFrame = Instance.new("Frame")
+    local ImageLabel = Instance.new("ImageLabel")
+    local TextButton = Instance.new("TextButton")
+    local UICorner = Instance.new("UICorner")
+    local UICorner_2 = Instance.new("UICorner")
+
+    ClickButton.Name = "ClickButton"
+    ClickButton.Parent = game.CoreGui
+    ClickButton.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = ClickButton
+    MainFrame.AnchorPoint = Vector2.new(1, 0)
+    MainFrame.BackgroundTransparency = 0.8
+    MainFrame.BackgroundColor3 = Color3.fromRGB(38, 38, 38) 
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Position = UDim2.new(1, -60, 0, 10)
+    MainFrame.Size = UDim2.new(0, 45, 0, 45)
+
+    UICorner.CornerRadius = UDim.new(1, 0)
+    UICorner.Parent = MainFrame
+
+    UICorner_2.CornerRadius = UDim.new(0, 10)
+    UICorner_2.Parent = ImageLabel
+
+    ImageLabel.Parent = MainFrame
+    ImageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+    ImageLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+    ImageLabel.BorderSizePixel = 0
+    ImageLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+    ImageLabel.Size = UDim2.new(0, 45, 0, 45)
+    ImageLabel.Image = "rbxassetid://"
+
+    TextButton.Parent = MainFrame
+    TextButton.BackgroundColor3 = Color3.new(1, 1, 1)
+    TextButton.BackgroundTransparency = 1
+    TextButton.BorderSizePixel = 0
+    TextButton.Position = UDim2.new(0, 0, 0, 0)
+    TextButton.Size = UDim2.new(0, 45, 0, 45)
+    TextButton.AutoButtonColor = false
+    TextButton.Font = Enum.Font.SourceSans
+    TextButton.Text = "Open"
+    TextButton.TextColor3 = Color3.new(220, 125, 255)
+    TextButton.TextSize = 20
+
+    TextButton.MouseButton1Click:Connect(function()
+        game:GetService("VirtualInputManager"):SendKeyEvent(true, "LeftControl", false, game)
+        game:GetService("VirtualInputManager"):SendKeyEvent(false, "LeftControl", false, game)
+    end)
+end
+
+local Window = Fluent:CreateWindow({
+    Title = game:GetService("MarketplaceService"):GetProductInfo(16732694052).Name .." | Zyg Hub [V3]",
+    SubTitle = "V1.24",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = false, -- The blur may be detectable, setting this to false disables blur entirely
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl -- Used when theres no MinimizeKeybind
 })
 
-local Tabs = {
-    -- Creates a new tab titled Main
-    Main = Window:AddTab('Main'),
-    ['Teleports'] = Window:AddTab('Teleports'),
-    ['Additions'] = Window:AddTab('Additions'),
-    ['ESP'] = Window:AddTab('ESP'),
-    ['UI Settings'] = Window:AddTab('UI Settings'),
-}
+-- // // // Services // // // --
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
+local HttpService = game:GetService("HttpService")
+local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService('StarterGui')
+local ContextActionService = game:GetService('ContextActionService')
+local UserInputService = game:GetService('UserInputService')
 
-local LeftGroupBox = Tabs.Main:AddLeftGroupbox('Integrities')
+-- // // // Locals // // // --
+local LocalPlayer = Players.LocalPlayer
+local LocalCharacter = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = LocalCharacter:FindFirstChild("HumanoidRootPart")
+local UserPlayer = HumanoidRootPart:WaitForChild("user")
+local ActiveFolder = Workspace:FindFirstChild("active")
+local FishingZonesFolder = Workspace:FindFirstChild("zones"):WaitForChild("fishing")
+local TpSpotsFolder = Workspace:FindFirstChild("world"):WaitForChild("spawns"):WaitForChild("TpSpots")
+local NpcFolder = Workspace:FindFirstChild("world"):WaitForChild("npcs")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local screenGui = Instance.new("ScreenGui", PlayerGui)
+local shadowCountLabel = Instance.new("TextLabel", screenGui)
+local RenderStepped = RunService.RenderStepped
+local WaitForSomeone = RenderStepped.Wait
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Perfect Catch',
-    Func = function()loadstring(game:HttpGet("https://pastebin.com/raw/xvUBwHBY"))()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Auto Catches but u still needa reel'
-})
+-- // // // Features List // // // --
 
-LeftGroupBox:AddDivider()
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Infinite Jump',
-    Func = function()local InfiniteJumpEnabled = true
-game:GetService("UserInputService").JumpRequest:connect(function()
-    if InfiniteJumpEnabled then
-        game:GetService"Players".LocalPlayer.Character:FindFirstChildOfClass'Humanoid':ChangeState("Jumping")
+-- // // // Variables // // // --
+local CastMode = "Legit"
+local ShakeMode = "Navigation"
+local ReelMode = "Blatant"
+local CollectMode = "Teleports"
+local teleportSpots = {}
+local FreezeChar = false
+local DayOnlyLoop = nil
+local BypassGpsLoop = nil
+local Noclip = false
+local RunCount = false
+
+-- // // // Functions // // // --
+function ShowNotification(String)
+    Fluent:Notify({
+        Title = "Zyg Hub [V3]",
+        Content = String,
+        Duration = 5
+    })
+end
+
+-- // Sending Execution To Discord // --
+local function GetPlayerStats()
+    local hud = LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild("hud")
+    if hud and hud.safezone then
+        local coins = hud.safezone:FindFirstChild("coins") and hud.safezone.coins.Text or "N/A"
+        local jobId = game.JobId
+        local joinScript = string.format("game:GetService('TeleportService'):TeleportToPlaceInstance(%d, '%s', game:GetService('Players').LocalPlayer)", game.PlaceId, jobId)
+        return {
+            Username = LocalPlayer.Name,
+            DisplayName = LocalPlayer.DisplayName,
+            Coins = coins,
+            JobId = jobId,
+            JoinScript = joinScript
+        }
     end
-end)
-local InfiniteJump = CreateButton("Infinite Jump: Off", StuffFrame)
-InfiniteJump.Position = UDim2.new(0,10,0,130)
-InfiniteJump.Size = UDim2.new(0,150,0,30)
-InfiniteJump.MouseButton1Click:connect(function()
-    local state = InfiniteJump.Text:sub(string.len("Infinite Jump: ") + 1) --too lazy to count lol
-    local new = state == "Off" and "On" or state == "On" and "Off"
-    InfiniteJumpEnabled = new == "On"
-    InfiniteJump.Text = "Infinite Jump: " .. new
-end)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton2 = MyButton:AddButton({
-    Text = 'Regular Speed',
-    Func = function()_G.HackedWalkSpeed = 16
- 
-local Plrs = game:GetService("Players")
- 
-local MyPlr = Plrs.LocalPlayer
-local MyChar = MyPlr.Character
- 
-if MyChar then
-local Hum = MyChar.Humanoid
-Hum.Changed:connect(function()
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end)
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end
- 
- 
-MyPlr.CharacterAdded:connect(function(Char)
-MyChar = Char
-repeat wait() until Char:FindFirstChild("Humanoid")
-local Hum = Char.Humanoid
-Hum.Changed:connect(function()
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end)
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end)
-    end,
-    DoubleClick = false, -- You will have to click this button twice to trigger the callback
-    Tooltip = 'Changes your walkspeed to normal'
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Spoofed Speed',
-    Func = function()_G.HackedWalkSpeed = 150
- 
-local Plrs = game:GetService("Players")
- 
-local MyPlr = Plrs.LocalPlayer
-local MyChar = MyPlr.Character
- 
-if MyChar then
-local Hum = MyChar.Humanoid
-Hum.Changed:connect(function()
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end)
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end
- 
- 
-MyPlr.CharacterAdded:connect(function(Char)
-MyChar = Char
-repeat wait() until Char:FindFirstChild("Humanoid")
-local Hum = Char.Humanoid
-Hum.Changed:connect(function()
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end)
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'No Clip',
-    Func = function()local noclip = true
-char = game.Players.LocalPlayer.Character
-while true do
-if noclip == true then
-for _,v in pairs(char:children()) do
-pcall(function()
-if v.className == "Part" then
-v.CanCollide = false
-end
-end)
-end
-end
-game:service("RunService").Stepped:wait()
+    return nil
 end
 
-    end,
-    DoubleClick = false,
-    Tooltip = 'Allows you to use noclip'
-})
-
-LeftGroupBox:AddDivider()
-
--- Groupbox:AddToggle
--- Arguments: Index, Options
-LeftGroupBox:AddToggle('MyToggle', {
-    Text = 'Anti AFK',
-    Default = false, -- Default value (true / false)
-
-    Callback = function(Value)local vu = game:GetService("VirtualUser")
-game:GetService("Players").LocalPlayer.Idled:connect(function()
-vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-wait(1)
-vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-end)
-    end
-})
-
-Toggles.MyToggle:OnChanged(function()
-    -- here we get our toggle object & then get its value
+game.Players.LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
 end)
 
--- This should print to the console: "My toggle state changed! New value: false"
-Toggles.MyToggle:SetValue(false)
-
--- Groupbox:AddDivider
--- Arguments: None
-
-
-LeftGroupBox:AddLabel('Panic Button [Deletes UI]'):AddKeyPicker('KeyPicker', {
-    -- SyncToggleState only works with toggles.
-    -- It allows you to make a keybind which has its state synced with its parent toggle
-
-    -- Example: Keybind which you use to toggle flyhack, etc.
-    -- Changing the toggle disables the keybind state and toggling the keybind switches the toggle state
-
-    Default = 'RightAlt', -- String as the name of the keybind (MB1, MB2 for mouse buttons)
-    SyncToggleState = false,
-
-
-    -- You can define custom Modes but I have never had a use for it.
-    Mode = 'Toggle', -- Modes: Always, Toggle, Hold
-
-    Text = 'Panic Button', -- Text to display in the keybind menu
-    NoUI = false, -- Set to true if you want to hide from the Keybind menu,
-
-    -- Occurs when the keybind is clicked, Value is `true`/`false`
-    Callback = function(Value)Library:Unload()
-    end,
-
-    -- Occurs when the keybind itself is changed, `New` is a KeyCode Enum OR a UserInputType Enum
-    ChangedCallback = function(New)
-    end
-})
-
-LeftGroupBox:AddDivider()
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Show Server Info',
-    Func = function()local args = {
-    [1] = "serverinfo",
-    [2] = true
-}
-
-game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.menu.menu_safezone.ChangeSetting:FireServer(unpack(args))
-    end,
-    DoubleClick = false,
-    Tooltip = 'Displays Server Info'
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Mute Music',
-    Func = function()local args = {
-    [1] = "music",
-    [2] = false
-}
-
-game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.menu.menu_safezone.ChangeSetting:FireServer(unpack(args))
-
-    end,
-    DoubleClick = false,
-    Tooltip = 'Mutes In game music'
-})
-
-
-
-local RightGroupBox = Tabs.Main:AddRightGroupbox('Main Scripts')
-local MyButton = RightGroupBox:AddButton('FullBright', function()loadstring(game:HttpGet("https://pastebin.com/raw/wLajZhKE"))()
-end)
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Enable Reset',
-    Func = function()while true do
-     game:GetService("StarterGui"):SetCore("ResetButtonCallback", true)
-     game:GetService("RunService").RenderStepped:Wait()
-end
-    end,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Remove Zoom Cap',
-    Func = function()workspace.world.npcs.Appraiser.appraiser.appraise:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Removes the Cap that roblox adds to the zoom'
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Reroll Lantern',
-    Func = function()workspace.world.npcs["Mods Latern Keeper"]["mods lantern"].purchase:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Rerolls the lantern you have'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Appraise Fish',
-    Func = function()workspace.world.npcs.Appraiser.appraiser.appraise:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Appraises fish that you are holding out'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Sell fish',
-    Func = function()workspace.world.npcs["Marc Merchant"].merchant.sell:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Sells only one fish that you are holding out'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Sell Inventory',
-    Func = function()workspace.world.npcs["Marc Merchant"].merchant.sellall:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Sells all of the fish in your inventory'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Remove AFK popup',
-    Func = function()while wait() do
-local args = {
-    [1] = false
-}
-
-game:GetService("ReplicatedStorage").events.afk:FireServer(unpack(args))
-end
-    end,
-    DoubleClick = false,
-    Tooltip = 'May Cause Lag'
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Redeem All Codes',
-    Func = function()local args = {
-    [1] = "ThanksFor10Mil"
-}
-
-game:GetService("ReplicatedStorage").events.runcode:FireServer(unpack(args))
---
-local args = {
-    [1] = "FischFright2024"
-}
-
-game:GetService("ReplicatedStorage").events.runcode:FireServer(unpack(args))
-    end,
-    DoubleClick = false,
-    Tooltip = 'Redeems all Codes for the game'
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Get Angler Quest',
-    Func = function()workspace.world.npcs["Marc Merchant"].merchant.sellall:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Invokes server to get quest'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Turn in fish to angler',
-    Func = function()workspace.world.npcs["Moosewood Angler"].angler.questCompleted:InvokeServer()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Hold Out fish'
-})
-
-
-
-
--- OnClick is only fired when you press the keybind and the mode is Toggle
--- Otherwise, you will have to use Keybind:GetState()
-Options.KeyPicker:OnClick(function()
-end)
-
-task.spawn(function()
+spawn(function()
     while true do
-        wait(1)
+        game:GetService("ReplicatedStorage"):WaitForChild("events"):WaitForChild("afk"):FireServer(false)
+        task.wait(0.01)
+    end
+end)
 
-        -- example for checking if a keybind is being pressed
-        local state = Options.KeyPicker:GetState()
-        if state then
+-- // // // Auto Cast // // // --
+local autoCastEnabled = false
+local function autoCast()
+    if LocalCharacter then
+        local tool = LocalCharacter:FindFirstChildOfClass("Tool")
+        if tool then
+            local hasBobber = tool:FindFirstChild("bobber")
+            if not hasBobber then
+                if CastMode == "Legit" then
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, LocalPlayer, 0)
+                    HumanoidRootPart.ChildAdded:Connect(function()
+                        if HumanoidRootPart:FindFirstChild("power") ~= nil and HumanoidRootPart.power.powerbar.bar ~= nil then
+                            HumanoidRootPart.power.powerbar.bar.Changed:Connect(function(property)
+                                if property == "Size" then
+                                    if HumanoidRootPart.power.powerbar.bar.Size == UDim2.new(1, 0, 1, 0) then
+                                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, LocalPlayer, 0)
+                                    end
+                                end
+                            end)
+                        end
+                    end)
+                elseif CastMode == "Blatant" then
+                    local rod = LocalCharacter and LocalCharacter:FindFirstChildOfClass("Tool")
+                    if rod and rod:FindFirstChild("values") and string.find(rod.Name, "Rod") then
+                        task.wait(0.5)
+                        local Random = math.random(90, 99)
+                        rod.events.cast:FireServer(Random)
+                    end
+                end
+            end
         end
-
-        if Library.Unloaded then break end
+        task.wait(0.5)
     end
-end)
-
-Options.KeyPicker:SetValue({ 'RightAlt', 'Toggle' }) -- Sets keybind to what you want it to be, mode to Hold
-
--- Library functions
--- Sets the watermark visibility
-Library:SetWatermarkVisibility(true)
-
--- Example of dynamically-updating watermark with common traits (fps and ping)
-local FrameTimer = tick()
-local FrameCounter = 0;
-local FPS = 60;
-
-local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(function()
-    FrameCounter += 1;
-
-    if (tick() - FrameTimer) >= 1 then
-        FPS = FrameCounter;
-        FrameTimer = tick();
-        FrameCounter = 0;
-    end;
-
-    Library:SetWatermark(('LinoriaLib demo | %s fps | %s ms'):format(
-        math.floor(FPS),
-        math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
-    ));
-end);
-
-Library.KeybindFrame.Visible = true; -- todo: add a function for this
-
-Library:OnUnload(function()
-    WatermarkConnection:Disconnect()
-
-    print('')
-    Library.Unloaded = true
-end)
-
--- Additions
-local MenuGroup = Tabs['Additions']
-local LeftGroupBox = Tabs.Additions:AddLeftGroupbox('Scripts')
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Dark Dex V5',
-    Func = function()loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Simple Spy',
-    Func = function()loadstring(game:HttpGet("https://pastebin.com/raw/U2r2Q9Kh", true))()
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Orca Hub',
-    Func = function()loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/richie0866/orca/master/public/snapshot.lua"))()
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Infinite Yield',
-    Func = function()loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/edgeiy/infiniteyield/master/source"))()
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Get coordinates script',
-    Func = function()local coordgui = Instance.new("ScreenGui")
-local main = Instance.new("Frame")
-local title = Instance.new("TextLabel")
-local grab = Instance.new("TextButton")
-local copy = Instance.new("TextButton")
-local teleport = Instance.new("TextButton")
-local close = Instance.new("TextButton")
-local cords = Instance.new("TextLabel")
---Properties:
-coordgui.Name = "coordgui"
-coordgui.Parent = game.CoreGui
-
-main.Name = "main"
-main.Parent = coordgui
-main.BackgroundColor3 = Color3.new(1, 1, 1)
-main.Position = UDim2.new(0.352638364, 0, 0.405797124, 0)
-main.Size = UDim2.new(0, 228, 0, 170)
-main.Style = Enum.FrameStyle.DropShadow
-main.Active = true
-main.Draggable = true
-
-title.Name = "title"
-title.Parent = main
-title.BackgroundColor3 = Color3.new(0, 0, 0)
-title.Position = UDim2.new(-0.0517418832, 0, -0.054933358, 0)
-title.Size = UDim2.new(0, 235, 0, 19)
-title.Font = Enum.Font.SciFi
-title.Text = "Coordinates Grabber Gui"
-title.TextColor3 = Color3.new(1, 1, 1)
-title.TextSize = 14
-
-grab.Name = "grab"
-grab.Parent = main
-grab.BackgroundColor3 = Color3.new(0, 0, 0)
-grab.Position = UDim2.new(0.0381504558, 0, 0.500263834, 0)
-grab.Size = UDim2.new(0, 128, 0, 31)
-grab.Font = Enum.Font.SciFi
-grab.Text = "Grab Coordinates"
-grab.TextColor3 = Color3.new(1, 1, 1)
-grab.TextSize = 14
-
-copy.Name = "copy"
-copy.Parent = main
-copy.BackgroundColor3 = Color3.new(0, 0, 0)
-copy.Position = UDim2.new(0.697107434, 0, 0.495215261, 0)
-copy.Size = UDim2.new(0, 52, 0, 32)
-copy.Font = Enum.Font.SciFi
-copy.Text = "Copy"
-copy.TextColor3 = Color3.new(1, 1, 1)
-copy.TextSize = 14
-
-teleport.Name = "teleport"
-teleport.Parent = main
-teleport.BackgroundColor3 = Color3.new(0, 0, 0)
-teleport.Position = UDim2.new(0.25, 0, 0.75, 0)
-teleport.Size = UDim2.new(0, 60, 0, 32)
-teleport.Font = Enum.Font.SciFi
-teleport.Text = "Teleport"
-teleport.TextColor3 = Color3.new(1, 1, 1)
-teleport.TextSize = 14
-
-close.Name = "close"
-close.Parent = main
-close.BackgroundColor3 = Color3.new(0, 0, 0)
-close.Position = UDim2.new(0.55, 0, 0.75, 0)
-close.Size = UDim2.new(0, 52, 0, 32)
-close.Font = Enum.Font.SciFi
-close.Text = "Close"
-close.TextColor3 = Color3.new(1, 1, 1)
-close.TextSize = 14
-
-cords.Name = "cords"
-cords.Parent = main
-cords.BackgroundColor3 = Color3.new(0, 0, 0)
-cords.Position = UDim2.new(0.0420129336, 0, 0.199266031, 0)
-cords.Size = UDim2.new(0, 194, 0, 37)
-cords.Font = Enum.Font.SciFi
-cords.Text = ""
-cords.TextColor3 = Color3.new(1, 1, 1)
-cords.TextSize = 14
-
-game:GetService("UserInputService").InputBegan:connect(onKeyPress)
-
-grab.MouseButton1Down:Connect(function()
-    cords.Text = tostring(game.Players.LocalPlayer.Character.HumanoidRootPart.Position)
-    wait(0.25)
-    print(''..tostring(game.Players.LocalPlayer.Character.HumanoidRootPart.Position))
-end)
-
-close.MouseButton1Down:Connect(function()
-    coordgui:Destroy()
-end)
-
-function mysplit(inputstr, sep)
-    if sep == nil then
-        sep = "%s"
-    end
-    local t={}
-    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-        table.insert(t, str)
-    end
-    return t
 end
 
-teleport.MouseButton1Down:Connect(function()
-    teleportTo = cords.Text
-    if teleportTo and teleportTo ~= "" and teleportTo ~= " " then
-        teleportTo = tostring(teleportTo)
-        coordsToTeleport = mysplit(teleportTo, ", ")
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(coordsToTeleport[1], coordsToTeleport[2], coordsToTeleport[3])
+-- // // // Auto Shake // // // --
+local autoShakeEnabled = false
+local autoShakeConnection
+local function autoShake()
+    if ShakeMode == "Navigation" then
+        task.wait()
+        xpcall(function()
+            local shakeui = PlayerGui:FindFirstChild("shakeui")
+            if not shakeui then return end
+            local safezone = shakeui:FindFirstChild("safezone")
+            local button = safezone and safezone:FindFirstChild("button")
+            task.wait(0.2)
+            GuiService.SelectedObject = button
+            if GuiService.SelectedObject == button then
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+            end
+            task.wait(0.1)
+            GuiService.SelectedObject = nil
+        end,function (err)
+        end)
+    elseif ShakeMode == "Mouse" then
+        task.wait()
+        xpcall(function()
+            local shakeui = PlayerGui:FindFirstChild("shakeui")
+            if not shakeui then return end
+            local safezone = shakeui:FindFirstChild("safezone")
+            local button = safezone and safezone:FindFirstChild("button")
+            local pos = button.AbsolutePosition
+            local size = button.AbsoluteSize
+            VirtualInputManager:SendMouseButtonEvent(pos.X + size.X / 2, pos.Y + size.Y / 2, 0, true, LocalPlayer, 0)
+            VirtualInputManager:SendMouseButtonEvent(pos.X + size.X / 2, pos.Y + size.Y / 2, 0, false, LocalPlayer, 0)
+        end,function (err)
+        end)
     end
-end)
-
-copy.MouseButton1Down:Connect(function()
-    setclipboard(""..cords.Text)
-end)
-    end,
-    DoubleClick = false,
-})
-
-
-local RightGroupBox = Tabs.Additions:AddRightGroupbox('Integrities')
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Get GameID',
-    Func = function()print(game.PlaceId)
-    end,
-    DoubleClick = false,
-    Tooltip = 'Gets the Location ID'
-})
-
-local RightGroupBox = Tabs.Additions:AddRightGroupbox('Server')
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Rejoin',
-    Func = function()game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
-    end,
-    DoubleClick = true,
-    Tooltip = 'Rejoins the same server'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Small Server Joiner',
-    Func = function()local Http = game:GetService("HttpService")
-local TPS = game:GetService("TeleportService")
-local Api = "https://games.roblox.com/v1/games/"
- 
-local _place = game.PlaceId
-local _servers = Api.._place.."/servers/Public?sortOrder=Asc&limit=100"
-function ListServers(cursor)
-   local Raw = game:HttpGet(_servers .. ((cursor and "&cursor="..cursor) or ""))
-   return Http:JSONDecode(Raw)
 end
- 
-local Server, Next; repeat
-   local Servers = ListServers(Next)
-   Server = Servers.data[1]
-   Next = Servers.nextPageCursor
-until Server
- 
-TPS:TeleportToPlaceInstance(_place,Server.id,game.Players.LocalPlayer)
-    end,
-    DoubleClick = true,
-    Tooltip = 'Teleports you to a small server'
-})
 
-local LeftGroupBox = Tabs.Teleports:AddLeftGroupbox('Islands')
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Moosewood',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(478.76080322265625, 150.88731384277344, 256.99835205078125)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Angler NPC',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-190.73927307128906, 135.71890258789062, 1960.935791015625)
-    end,
-    DoubleClick = false,
-})
-
-LeftGroupBox:AddDivider()
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Roslit Bay',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1473.2532958984375, 132.52549743652344, 706.1644897460938)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Roslit Pond',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1785.347412109375, 148.0926055908203, 645.361328125)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Roslit Volcano',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1912.2547607421875, 164.58445739746094, 318.4088439941406)
-    end,
-    DoubleClick = false,
-})
-
-LeftGroupBox:AddDivider()
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Sunstone Island',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-969.1112060546875, 222.12545776367188, -986.8920288085938)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Sunstone Island Cave',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1144.284423828125, 134.49998474121094, -1069.3402099609375)
-    end,
-    DoubleClick = false,
-})
-
-LeftGroupBox:AddDivider()
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Statue Of Sovereignty',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(32.411834716796875, 159.01470947265625, -1037.25537109375)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Sovereignty Mines',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-20.240066528320312, 136.4925994873047, -1130.1387939453125)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Enchant Altar',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1312.7747802734375, -805.292236328125, -116.39986419677734)
-
-    end,
-    DoubleClick = false,
-})
-
-local RightGroupBox = Tabs.Teleports:AddRightGroupbox('Islands')
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Snow Cap Island',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2687.690185546875, 152.71414184570312, 2394.713134765625)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Snow Cap Island Cave',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2870.4, 141.3, 2607.6)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Mushgrove Swamp',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2447.5, 130.9, -676.4)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Gamma Grotto',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2234.450927734375, -804.1823120117188, 1034.0631103515625)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Virtigo',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-106.84429931640625, -515.2994384765625, 1138.7056884765625)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Mod Office',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-36.44055938720703, -246.55001831054688, 206.49179077148438)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Harvesters Spike',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1252.5274658203125, 136.81735229492188, 1557.444091796875)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'The Arch',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(995.0608520507812, 131.3202362060547, -1234.4146728515625)
-    end,
-    DoubleClick = false,
-})
-
-RightGroupBox:AddDivider()
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Terrapin Island',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-155.4606475830078, 144.85484313964844, 1935.9346923828125)
-    end,
-    DoubleClick = false,
-})
-
-local LeftGroupBox = Tabs.Teleports:AddLeftGroupbox('Npc')
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Calaria',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(979.8135375976562, 131.32025146484375, -1234.2672119140625)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Appraiser',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(446.9096374511719, 150.5481414794922, 207.86827087402344)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Ashe',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1711.3140869140625, 148.00001525878906, 727.0239868164062)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Cole',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-23.957019805908203, 136.4925994873047, -1134.3106689453125)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Lantern Keeper',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(658.7532958984375, 163.70030212402344, 263.33001708984375)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Leeri',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-136.39031982421875, -548.2994384765625, 1428.3680419921875)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Perdido',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-97.83454132080078, -566.29931640625, 1553.118408203125)
-    end,
-    DoubleClick = false,
-})
-
-local LeftGroupBox = Tabs.Teleports:AddLeftGroupbox('Inn Keeper')
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Moosewood Inn Keeper',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(489.5142517089844, 150.7000274658203, 233.4305419921875)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Roslit Inn Keeper',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1509.3538818359375, 133.00001525878906, 628.8071899414062)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Snowcap Inn Keeper',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2661.626708984375, 155.16114807128906, 2392.70263671875)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Sunstone Inn Keeper',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-906.4525146484375, 131.07879638671875, -1103.8641357421875)
-    end,
-    DoubleClick = false,
-})
-
-
-
-local RightGroupBox = Tabs.Teleports:AddRightGroupbox('Npcs')
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Orc',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1847.85400390625, 165.7111358642578, 161.4885711669922)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Wilson',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2936.706298828125, 280.7837829589844, 2567.025146484375)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Phineas',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(472.5872802734375, 150.69342041015625, 277.0097961425781)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Merlin',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-930.3570556640625, 225.73098754882812, -993.3174438476562)
-    end,
-    DoubleClick = false,
-})
-
-
-
-local RightGroupBox = Tabs.Teleports:AddRightGroupbox('Shipwright')
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Mushgrove Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2455.2783203125, 130.664306640625, -666.0444946289062)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Moosewood Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(360.6377258300781, 133.61595153808594, 258.4936828613281)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Roslit Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1453.57763671875, 133.0000457763672, 743.05322265625)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Snowcap Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(2619.9248046875, 136.28387451171875, 2404.054443359375)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Statue Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(26.117507934570312, 135.03036499023438, -1008.5941162109375)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Sunstone Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-941.6656494140625, 131.0788116455078, -1116.7144775390625)
-    end,
-    DoubleClick = false,
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Terrapin Shipwright',
-    Func = function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-191.16427612304688, 132.50003051757812, 1924.0589599609375)
-    end,
-    DoubleClick = false,
-})
-
-
-local MenuGroup = Tabs['ESP']
-local LeftGroupBox = Tabs.ESP:AddLeftGroupbox('Integrities')
-
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Players',
-    Func = function()local function updatePlayerESP()
-    local localCharacter = game.Players.LocalPlayer.Character
-    if not localCharacter then
-        return
+local function startAutoShake()
+    if autoShakeConnection or not autoShakeEnabled then return end
+    autoShakeConnection = RunService.RenderStepped:Connect(autoShake)
+end
+
+local function stopAutoShake()
+    if autoShakeConnection then
+        autoShakeConnection:Disconnect()
+        autoShakeConnection = nil
     end
+end
+
+PlayerGui.DescendantAdded:Connect(function(descendant)
+    if autoShakeEnabled and descendant.Name == "button" and descendant.Parent and descendant.Parent.Name == "safezone" then
+        startAutoShake()
+    end
+end)
+
+PlayerGui.DescendantAdded:Connect(function(descendant)
+    if descendant.Name == "playerbar" and descendant.Parent and descendant.Parent.Name == "bar" then
+        stopAutoShake()
+    end
+end)
+
+if autoShakeEnabled and PlayerGui:FindFirstChild("shakeui") and PlayerGui.shakeui:FindFirstChild("safezone") and PlayerGui.shakeui.safezone:FindFirstChild("button") then
+    startAutoShake()
+end
+
+-- // // // Auto Reel // // // --
+local autoReelEnabled = false
+local PerfectCatchEnabled = false
+local autoReelConnection
+local function autoReel()
+    local reel = PlayerGui:FindFirstChild("reel")
+    if not reel then return end
+    local bar = reel:FindFirstChild("bar")
+    local playerbar = bar and bar:FindFirstChild("playerbar")
+    local fish = bar and bar:FindFirstChild("fish")
+    if playerbar and fish then
+        playerbar.Position = fish.Position
+    end
+end
+
+local function noperfect()
+    local reel = PlayerGui:FindFirstChild("reel")
+    if not reel then return end
+    local bar = reel:FindFirstChild("bar")
+    local playerbar = bar and bar:FindFirstChild("playerbar")
+    if playerbar then
+        playerbar.Position = UDim2.new(0, 0, -35, 0)
+        wait(0.2)
+    end
+end
+
+local function startAutoReel()
+    if ReelMode == "Legit" then
+        if autoReelConnection or not autoReelEnabled then return end
+        noperfect()
+        task.wait(2)
+        autoReelConnection = RunService.RenderStepped:Connect(autoReel)
+    elseif ReelMode == "Blatant" then
+        local reel = PlayerGui:FindFirstChild("reel")
+        if not reel then return end
+        local bar = reel:FindFirstChild("bar")
+        local playerbar = bar and bar:FindFirstChild("playerbar")
+        playerbar:GetPropertyChangedSignal('Position'):Wait()
+        game.ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished"):FireServer(100, false)
+    end
+end
+
+local function stopAutoReel()
+    if autoReelConnection then
+        autoReelConnection:Disconnect()
+        autoReelConnection = nil
+    end
+end
+
+PlayerGui.DescendantAdded:Connect(function(descendant)
+    if autoReelEnabled and descendant.Name == "playerbar" and descendant.Parent and descendant.Parent.Name == "bar" then
+        startAutoReel()
+    end
+end)
+
+PlayerGui.DescendantRemoving:Connect(function(descendant)
+    if descendant.Name == "playerbar" and descendant.Parent and descendant.Parent.Name == "bar" then
+        stopAutoReel()
+        if autoCastEnabled then
+            task.wait(1)
+            autoCast()
+        end
+    end
+end)
+
+if autoReelEnabled and PlayerGui:FindFirstChild("reel") and 
+    PlayerGui.reel:FindFirstChild("bar") and 
+    PlayerGui.reel.bar:FindFirstChild("playerbar") then
+    startAutoReel()
+end
+
+-- // // // Zone Cast // // // --
+ZoneConnection = LocalCharacter.ChildAdded:Connect(function(child)
+    if ZoneCast and child:IsA("Tool") and FishingZonesFolder:FindFirstChild(Zone) ~= nil then
+        child.ChildAdded:Connect(function(blehh)
+            if blehh.Name == "bobber" then
+                local RopeConstraint = blehh:FindFirstChildOfClass("RopeConstraint")
+                if ZoneCast and RopeConstraint ~= nil then
+                    RopeConstraint.Changed:Connect(function(property)
+                        if property == "Length" then
+                            RopeConstraint.Length = math.huge
+                        end
+                    end)
+                    RopeConstraint.Length = math.huge
+                end
+                task.wait(1)
+                while WaitForSomeone(RenderStepped) do
+                    if ZoneCast and blehh.Parent ~= nil then
+                        task.wait()
+                        blehh.CFrame = FishingZonesFolder[Zone].CFrame
+                    else
+                        break
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- // Find TpSpots // --
+local TpSpotsFolder = Workspace:FindFirstChild("world"):WaitForChild("spawns"):WaitForChild("TpSpots")
+for i, v in pairs(TpSpotsFolder:GetChildren()) do
+    if table.find(teleportSpots, v.Name) == nil then
+        table.insert(teleportSpots, v.Name)
+    end
+end
+
+-- // // // Get Position // // // --
+function GetPosition()
+	if not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		return {
+			Vector3.new(0,0,0),
+			Vector3.new(0,0,0),
+			Vector3.new(0,0,0)
+		}
+	end
+	return {
+		game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position.X,
+		game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position.Y,
+		game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position.Z
+	}
+end
+
+function ExportValue(arg1, arg2)
+	return tonumber(string.format("%."..(arg2 or 1)..'f', arg1))
+end
+
+-- // // // Sell Item // // // --
+function rememberPosition()
+    spawn(function()
+        local initialCFrame = HumanoidRootPart.CFrame
  
-    for _, player in ipairs(game.Players:GetPlayers()) do
-        if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-            local distance = (localCharacter.Head.Position - player.Character.Head.Position).Magnitude
-            local billboardGui = player.Character.Head:FindFirstChild("TadachiisESPTags") -- Check if the BillboardGui exists
-            if not billboardGui then -- Only create a new one if it doesn't exist
-                billboardGui = Instance.new("BillboardGui")
-                billboardGui.Name = "TadachiisESPTags" -- Use the correct name for the BillboardGui
-                billboardGui.Adornee = player.Character.Head
-                billboardGui.Size = UDim2.new(0, 100, 0, 50) -- fixed size for the BillboardGui
-                billboardGui.StudsOffset = Vector3.new(0, 2, 0) -- adjust the vertical offset as needed
-                billboardGui.AlwaysOnTop = true
-                billboardGui.LightInfluence = 1
-                billboardGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-                billboardGui.Parent = player.Character.Head
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVelocity.Parent = HumanoidRootPart
  
-                local textLabel = Instance.new("TextLabel")
-                textLabel.Name = "NameLabel" -- Use the correct name for the label
-                textLabel.Text = player.Name .. "\nDistance: " .. math.floor(distance)
-                textLabel.Size = UDim2.new(1, 0, 1, 0)
-                textLabel.BackgroundTransparency = 1 -- transparent background
-                textLabel.TextColor3 = Color3.new(1, 0, 0) -- red text for the player's name
-                textLabel.TextScaled = true
-                textLabel.TextStrokeColor3 = Color3.new(0, 0, 0) -- black text stroke
-                textLabel.TextStrokeTransparency = 0 -- fully opaque text stroke (visible through walls)
-                textLabel.Visible = true -- ESP is always visible without a GUI
-                textLabel.Parent = billboardGui
-            else
-                billboardGui.NameLabel.Text = player.Name .. "\nDistance: " .. math.floor(distance) -- Update the distance text
+        local bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyGyro.D = 100
+        bodyGyro.P = 10000
+        bodyGyro.CFrame = initialCFrame
+        bodyGyro.Parent = HumanoidRootPart
+ 
+        while AutoFreeze do
+            HumanoidRootPart.CFrame = initialCFrame
+            task.wait(0.01)
+        end
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+        end
+        if bodyGyro then
+            bodyGyro:Destroy()
+        end
+    end)
+end
+function SellHand()
+    local currentPosition = HumanoidRootPart.CFrame
+    local sellPosition = CFrame.new(464, 151, 232)
+    local wasAutoFreezeActive = false
+    if AutoFreeze then
+        wasAutoFreezeActive = true
+        AutoFreeze = false
+    end
+    HumanoidRootPart.CFrame = sellPosition
+    task.wait(0.5)
+    workspace:WaitForChild("world"):WaitForChild("npcs"):WaitForChild("Marc Merchant"):WaitForChild("merchant"):WaitForChild("sell"):InvokeServer()
+    task.wait(1)
+    HumanoidRootPart.CFrame = currentPosition
+    if wasAutoFreezeActive then
+        AutoFreeze = true
+        rememberPosition()
+    end
+end
+function SellAll()
+    local currentPosition = HumanoidRootPart.CFrame
+    local sellPosition = CFrame.new(464, 151, 232)
+    local wasAutoFreezeActive = false
+    if AutoFreeze then
+        wasAutoFreezeActive = true
+        AutoFreeze = false
+    end
+    HumanoidRootPart.CFrame = sellPosition
+    task.wait(0.5)
+    workspace:WaitForChild("world"):WaitForChild("npcs"):WaitForChild("Marc Merchant"):WaitForChild("merchant"):WaitForChild("sellall"):InvokeServer()
+    task.wait(1)
+    HumanoidRootPart.CFrame = currentPosition
+    if wasAutoFreezeActive then
+        AutoFreeze = true
+        rememberPosition()
+    end
+end
+
+-- // // // Noclip Stepped // // // --
+NoclipConnection = RunService.Stepped:Connect(function()
+    if Noclip == true then
+        if LocalCharacter ~= nil then
+            for i, v in pairs(LocalCharacter:GetDescendants()) do
+                if v:IsA("BasePart") and v.CanCollide == true then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+-- // // // Dupe // // // --
+local DupeEnabled = false
+local DupeConnection
+local function autoDupe()
+    local hud = LocalPlayer.PlayerGui:FindFirstChild("hud")
+    if hud then
+        local safezone = hud:FindFirstChild("safezone")
+        if safezone then
+            local bodyAnnouncements = safezone:FindFirstChild("bodyannouncements")
+            if bodyAnnouncements then
+                local offerFrame = bodyAnnouncements:FindFirstChild("offer")
+                if offerFrame and offerFrame:FindFirstChild("confirm") then
+                    firesignal(offerFrame.confirm.MouseButton1Click)
+                end
             end
         end
     end
 end
- 
--- Call updatePlayerESP() initially and then schedule it to be called every 0.01 seconds
-updatePlayerESP()
-game:GetService("RunService").Heartbeat:Connect(function()
-    updatePlayerESP()
+
+local function startAutoDupe()
+    if DupeConnection or not DupeEnabled then return end
+    DupeConnection = RunService.RenderStepped:Connect(autoDupe)
+end
+
+local function stopAutoDupe()
+    if DupeConnection then
+        DupeConnection:Disconnect()
+        DupeConnection = nil
+    end
+end
+
+PlayerGui.DescendantAdded:Connect(function(descendant)
+    if DupeEnabled and descendant.Name == "confirm" and descendant.Parent and descendant.Parent.Name == "offer" then
+        local hud = LocalPlayer.PlayerGui:FindFirstChild("hud")
+        if hud then
+            local safezone = hud:FindFirstChild("safezone")
+            if safezone then
+                local bodyAnnouncements = safezone:FindFirstChild("bodyannouncements")
+                if bodyAnnouncements then
+                    local offerFrame = bodyAnnouncements:FindFirstChild("offer")
+                    if offerFrame and offerFrame:FindFirstChild("confirm") then
+                        firesignal(offerFrame.confirm.MouseButton1Click)
+                    end
+                end
+            end
+        end
+    end
 end)
-    end,
-    DoubleClick = false,
+
+-- // // // Exclusives // // // --
+local shadowCountLabel = Instance.new("TextLabel", screenGui)
+shadowCountLabel.Size = UDim2.new(0, 200, 0, 50)
+shadowCountLabel.Position = UDim2.new(0, 30, 0, 260)
+shadowCountLabel.BackgroundTransparency = 0.5
+shadowCountLabel.BackgroundColor3 = Color3.fromRGB(38, 38, 38) 
+shadowCountLabel.TextColor3 = Color3.new(220, 125, 255)
+shadowCountLabel.Font = Enum.Font.SourceSans
+shadowCountLabel.TextSize = 24
+shadowCountLabel.Text = "Shadow Count: 0"
+
+local corner = Instance.new("UICorner", shadowCountLabel)
+corner.CornerRadius = UDim.new(0, 10)
+
+local function updateShadowCount()
+    local count = #workspace.Shadows:GetChildren()
+    shadowCountLabel.Text = "Shadow Count: " .. count
+end
+
+spawn(function()
+    while true do
+        updateShadowCount()
+        task.wait(0.5)
+    end
+end)
+
+-- // // // Tabs Gui // // // --
+
+local Tabs = { -- https://lucide.dev/icons/
+    Home = Window:AddTab({ Title = "Home", Icon = "home" }),
+    Exclusives = Window:AddTab({ Title = "Exclusives", Icon = "heart" }),
+    Main = Window:AddTab({ Title = "Main", Icon = "list" }),
+    Items = Window:AddTab({ Title = "Items", Icon = "box" }),
+    Teleports = Window:AddTab({ Title = "Teleports", Icon = "map-pin" }),
+    Misc = Window:AddTab({ Title = "Misc", Icon = "file-text" }),
+}
+
+local Options = Fluent.Options
+
+do
+    Tabs.Home:AddButton({
+        Title = "Copy Discord link",
+        Description = "Join the discord",
+        Callback = function()
+            setclipboard("https://discord.gg/bexbpyyg8a")
+        end
+    })
+    -- // Exclusives Tab // --
+    local sectionExclus = Tabs.Exclusives:AddSection("Exclusives Features")
+    local CountShadows = Tabs.Exclusives:AddToggle("CountShadows", {Title = "Show Count Shadows", Default = false })
+    CountShadows:OnChanged(function()
+        local RequireRod = PlayerGui.hud.safezone.equipment.rods.scroll.safezone:FindFirstChild("Rod Of The Depths")
+        if not RequireRod then return ShowNotification("Requirement Rod Of The Depths") end
+        if Options.CountShadows.Value == true then
+            shadowCountLabel.Visible = true
+        else
+            shadowCountLabel.Visible = false
+        end
+    end)
+    local RodDupe = Tabs.Exclusives:AddToggle("RodDupe", {Title = "Rod Of The Depths Spam", Default = false })
+    RodDupe:OnChanged(function()
+        local RequireRod = PlayerGui.hud.safezone.equipment.rods.scroll.safezone:FindFirstChild("Rod Of The Depths")
+        if not RequireRod then return ShowNotification("Requirement Rod Of The Depths") end
+        while Options.RodDupe.Value do
+            local args1 = {[1] = "Flimsy Rod"}
+            game:GetService("ReplicatedStorage").events.equiprod:FireServer(unpack(args1))
+
+            local args2 = {[1] = "Rod Of The Depths"}
+            game:GetService("ReplicatedStorage").events.equiprod:FireServer(unpack(args2))
+            task.wait(RodDupeDelay)
+        end
+    end)
+    local RodDupe_Delay = Tabs.Exclusives:AddSlider("RodDupe_Delay", {
+        Title = "Rod Of The Depths Spam Delay",
+        Description = "",
+        Default = 0.2,
+        Min = 0,
+        Max = 1,
+        Rounding = 1,
+        Callback = function(Value)
+            RodDupeDelay = Value
+        end
+    })
+    Tabs.Exclusives:AddButton({
+        Title = "Dupe Shadow",
+        Description = "",
+        Callback = function()
+            local RequireRod = PlayerGui.hud.safezone.equipment.rods.scroll.safezone:FindFirstChild("Rod Of The Depths")
+            if not RequireRod then return ShowNotification("Requirement Rod Of The Depths") end
+            for i,v in pairs(LocalPlayer.Backpack:GetChildren()) do 
+                if v:FindFirstChild("offer") then
+                    v.Parent = LocalPlayer.Character
+                end
+            end
+            task.wait(2)
+            for i,v in pairs(LocalPlayer.Character:GetChildren()) do 
+                if v:FindFirstChild("offer") then
+                    v.Parent = LocalPlayer.Backpack
+                end
+            end
+        end
+    })
+
+    Tabs.Exclusives:AddButton({
+        Title = "Destroy Shadows",
+        Description = "",
+        Callback = function()
+            for _,shadow in pairs(workspace.Shadows:GetChildren()) do
+    		    shadow:Destroy()
+		    end
+        end
+    })
+
+    -- // Main Tab // --
+    local section = Tabs.Main:AddSection("Auto Fishing")
+    local autoCast = Tabs.Main:AddToggle("autoCast", {Title = "Auto Cast", Default = false })
+    autoCast:OnChanged(function()
+        local RodName = ReplicatedStorage.playerstats[LocalPlayer.Name].Stats.rod.Value
+        if Options.autoCast.Value == true then
+            autoCastEnabled = true
+            if LocalPlayer.Backpack:FindFirstChild(RodName) then
+                LocalPlayer.Character.Humanoid:EquipTool(LocalPlayer.Backpack:FindFirstChild(RodName))
+            end
+            if LocalCharacter then
+                local tool = LocalCharacter:FindFirstChildOfClass("Tool")
+                if tool then
+                    local hasBobber = tool:FindFirstChild("bobber")
+                    if not hasBobber then
+                        if CastMode == "Legit" then
+                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, LocalPlayer, 0)
+                            HumanoidRootPart.ChildAdded:Connect(function()
+                                if HumanoidRootPart:FindFirstChild("power") ~= nil and HumanoidRootPart.power.powerbar.bar ~= nil then
+                                    HumanoidRootPart.power.powerbar.bar.Changed:Connect(function(property)
+                                        if property == "Size" then
+                                            if HumanoidRootPart.power.powerbar.bar.Size == UDim2.new(1, 0, 1, 0) then
+                                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, LocalPlayer, 0)
+                                            end
+                                        end
+                                    end)
+                                end
+                            end)
+                        elseif CastMode == "Blatant" then
+                            local rod = LocalCharacter and LocalCharacter:FindFirstChildOfClass("Tool")
+                            if rod and rod:FindFirstChild("values") and string.find(rod.Name, "Rod") then
+                                task.wait(0.5)
+                                local Random = math.random(90, 99)
+                                rod.events.cast:FireServer(Random)
+                            end
+                        end
+                    end
+                end
+                task.wait(1)
+            end
+        else
+            autoCastEnabled = false
+        end
+    end)
+    local autoShake = Tabs.Main:AddToggle("autoShake", {Title = "Auto Shake", Default = false })
+    autoShake:OnChanged(function()
+        if Options.autoShake.Value == true then
+            autoShakeEnabled = true
+            startAutoShake()
+        else
+            autoShakeEnabled = false
+            stopAutoShake()
+        end
+    end)
+    local autoReel = Tabs.Main:AddToggle("autoReel", {Title = "Auto Reel", Default = false })
+    autoReel:OnChanged(function()
+        if Options.autoReel.Value == true then
+            autoReelEnabled = true
+            startAutoReel()
+        else
+            autoReelEnabled = false
+            stopAutoReel()
+        end
+    end)
+    local FreezeCharacter = Tabs.Main:AddToggle("FreezeCharacter", {Title = "Freeze Character", Default = false })
+    FreezeCharacter:OnChanged(function()
+        local oldpos = HumanoidRootPart.CFrame
+        FreezeChar = Options.FreezeCharacter.Value
+        task.wait()
+        while WaitForSomeone(RenderStepped) do
+            if FreezeChar and HumanoidRootPart ~= nil then
+                task.wait()
+                HumanoidRootPart.CFrame = oldpos
+            else
+                break
+            end
+        end
+    end)
+
+    -- // Mode Tab // --
+    local section = Tabs.Main:AddSection("Mode Fishing")
+    local autoCastMode = Tabs.Main:AddDropdown("autoCastMode", {
+        Title = "Auto Cast Mode",
+        Values = {"Legit", "Blatant"},
+        Multi = false,
+        Default = CastMode,
+    })
+    autoCastMode:OnChanged(function(Value)
+        CastMode = Value
+    end)
+    local autoShakeMode = Tabs.Main:AddDropdown("autoShakeMode", {
+        Title = "Auto Shake Mode",
+        Values = {"Navigation", "Mouse"},
+        Multi = false,
+        Default = ShakeMode,
+    })
+    autoShakeMode:OnChanged(function(Value)
+        ShakeMode = Value
+    end)
+    local autoReelMode = Tabs.Main:AddDropdown("autoReelMode", {
+        Title = "Auto Reel Mode",
+        Values = {"Legit", "Blatant"},
+        Multi = false,
+        Default = ReelMode,
+    })
+    autoReelMode:OnChanged(function(Value)
+        ReelMode = Value
+    end)
+
+    -- // Sell Tab // --
+    local section = Tabs.Items:AddSection("Sell Items")
+    Tabs.Items:AddButton({
+        Title = "Sell Hand",
+        Description = "",
+        Callback = function()
+            SellHand()
+        end
+    })
+    Tabs.Items:AddButton({
+        Title = "Sell All",
+        Description = "",
+        Callback = function()
+            SellAll()
+        end
+    })
+
+    -- // Treasure Tab // --
+    local section = Tabs.Items:AddSection("Treasure")
+    Tabs.Items:AddButton({
+        Title = "Teleport to Jack Marrow",
+        Callback = function()
+            HumanoidRootPart.CFrame = CFrame.new(-2824.359, 214.311, 1518.130)
+        end
+    })
+    Tabs.Items:AddButton({
+        Title = "Repair Map",
+        Callback = function()
+            for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do 
+                if v.Name == "Treasure Map" then
+                    game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+                    workspace.world.npcs["Jack Marrow"].treasure.repairmap:InvokeServer()
+                end
+            end
+        end
+    })
+    Tabs.Items:AddButton({
+        Title = "Collect Treasure",
+        Callback = function()
+            for i, v in ipairs(game:GetService("Workspace"):GetDescendants()) do
+                if v.ClassName == "ProximityPrompt" then
+                    v.HoldDuration = 0
+                end
+            end
+            for i, v in pairs(workspace.world.chests:GetDescendants()) do
+                if v:IsA("Part") and v:FindFirstChild("ChestSetup") then 
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+                    for _, v in pairs(workspace.world.chests:GetDescendants()) do
+                        if v.Name == "ProximityPrompt" then
+                            fireproximityprompt(v)
+                        end
+                    end
+                    task.wait(1)
+                end 
+            end
+        end
+    })
+
+    -- // Teleports Tab // --
+    local section = Tabs.Teleports:AddSection("Select Teleport")
+    local IslandTPDropdownUI = Tabs.Teleports:AddDropdown("IslandTPDropdownUI", {
+        Title = "Area Teleport",
+        Values = teleportSpots,
+        Multi = false,
+        Default = nil,
+    })
+    IslandTPDropdownUI:OnChanged(function(Value)
+        if teleportSpots ~= nil and HumanoidRootPart ~= nil then
+            xpcall(function()
+                HumanoidRootPart.CFrame = TpSpotsFolder:FindFirstChild(Value).CFrame + Vector3.new(0, 5, 0)
+                IslandTPDropdownUI:SetValue(nil)
+            end,function (err)
+            end)
+        end
+    end)
+    local TotemTPDropdownUI = Tabs.Teleports:AddDropdown("TotemTPDropdownUI", {
+        Title = "Select Totem",
+        Values = {"Aurora", "Sundial", "Windset", "Smokescreen", "Tempest"},
+        Multi = false,
+        Default = nil,
+    })
+    TotemTPDropdownUI:OnChanged(function(Value)
+        SelectedTotem = Value
+        if SelectedTotem == "Aurora" then
+            HumanoidRootPart.CFrame = CFrame.new(-1811, -137, -3282)
+            TotemTPDropdownUI:SetValue(nil)
+        elseif SelectedTotem == "Sundial" then
+            HumanoidRootPart.CFrame = CFrame.new(-1148, 135, -1075)
+            TotemTPDropdownUI:SetValue(nil)
+        elseif SelectedTotem == "Windset" then
+            HumanoidRootPart.CFrame = CFrame.new(2849, 178, 2702)
+            TotemTPDropdownUI:SetValue(nil)
+        elseif SelectedTotem == "Smokescreen" then
+            HumanoidRootPart.CFrame = CFrame.new(2789, 140, -625)
+            TotemTPDropdownUI:SetValue(nil)
+        elseif SelectedTotem == "Tempest" then
+            HumanoidRootPart.CFrame = CFrame.new(35, 133, 1943)
+            TotemTPDropdownUI:SetValue(nil)
+        end
+    end)
+    local WorldEventTPDropdownUI = Tabs.Teleports:AddDropdown("WorldEventTPDropdownUI", {
+        Title = "Select World Event",
+        Values = {"Strange Whirlpool", "Great Hammerhead Shark", "Great White Shark", "Whale Shark", "The Depths - Serpent"},
+        Multi = false,
+        Default = nil,
+    })
+    WorldEventTPDropdownUI:OnChanged(function(Value)
+        SelectedWorldEvent = Value
+        if SelectedWorldEvent == "Strange Whirlpool" then
+            local offset = Vector3.new(25, 135, 25)
+            local WorldEvent = game.Workspace.zones.fishing:FindFirstChild("Isonade")
+            if not WorldEvent then WorldEventTPDropdownUI:SetValue(nil) return ShowNotification("Not found Strange Whirlpool") end
+            HumanoidRootPart.CFrame = CFrame.new(game.Workspace.zones.fishing.Isonade.Position + offset)                           -- Strange Whirlpool
+            WorldEventTPDropdownUI:SetValue(nil)
+        elseif SelectedWorldEvent == "Great Hammerhead Shark" then
+            local offset = Vector3.new(0, 135, 0)
+            local WorldEvent = game.Workspace.zones.fishing:FindFirstChild("Great Hammerhead Shark")
+            if not WorldEvent then WorldEventTPDropdownUI:SetValue(nil) return ShowNotification("Not found Great Hammerhead Shark") end
+            HumanoidRootPart.CFrame = CFrame.new(game.Workspace.zones.fishing["Great Hammerhead Shark"].Position + offset)         -- Great Hammerhead Shark
+            WorldEventTPDropdownUI:SetValue(nil)
+        elseif SelectedWorldEvent == "Great White Shark" then
+            local offset = Vector3.new(0, 135, 0)
+            local WorldEvent = game.Workspace.zones.fishing:FindFirstChild("Great White Shark")
+            if not WorldEvent then WorldEventTPDropdownUI:SetValue(nil) return ShowNotification("Not found Great White Shark") end
+            HumanoidRootPart.CFrame = CFrame.new(game.Workspace.zones.fishing["Great White Shark"].Position + offset)               -- Great White Shark
+            WorldEventTPDropdownUI:SetValue(nil)
+        elseif SelectedWorldEvent == "Whale Shark" then
+            local offset = Vector3.new(0, 135, 0)
+            local WorldEvent = game.Workspace.zones.fishing:FindFirstChild("Whale Shark")
+            if not WorldEvent then WorldEventTPDropdownUI:SetValue(nil) return ShowNotification("Not found Whale Shark") end
+            HumanoidRootPart.CFrame = CFrame.new(game.Workspace.zones.fishing["Whale Shark"].Position + offset)                     -- Whale Shark
+            WorldEventTPDropdownUI:SetValue(nil)
+        elseif SelectedWorldEvent == "The Depths - Serpent" then
+            local offset = Vector3.new(0, 50, 0)
+            local WorldEvent = game.Workspace.zones.fishing:FindFirstChild("The Depths - Serpent")
+            if not WorldEvent then WorldEventTPDropdownUI:SetValue(nil) return ShowNotification("Not found The Depths - Serpent") end
+            HumanoidRootPart.CFrame = CFrame.new(game.Workspace.zones.fishing["The Depths - Serpent"].Position + offset)            -- The Depths - Serpent
+            WorldEventTPDropdownUI:SetValue(nil)
+        end
+    end)
+    Tabs.Teleports:AddButton({
+        Title = "Teleport to Traveler Merchant",
+        Description = "Teleports to the Traveler Merchant.",
+        Callback = function()
+            local Merchant = game.Workspace.active:FindFirstChild("Merchant Boat")
+            if not Merchant then return ShowNotification("Not found Merchant") end
+            HumanoidRootPart.CFrame = CFrame.new(game.Workspace.active["Merchant Boat"].Boat["Merchant Boat"].r.HandlesR.Position)
+        end
+    })
+    Tabs.Teleports:AddButton({
+        Title = "Create Safe Zone",
+        Callback = function()
+            local SafeZone = Instance.new("Part")
+            SafeZone.Size = Vector3.new(30, 1, 30)
+            SafeZone.Position = Vector3.new(math.random(-2000,2000), math.random(50000,90000), math.random(-2000,2000))
+            SafeZone.Anchored = true
+            SafeZone.BrickColor = BrickColor.new("Bright purple")
+            SafeZone.Material = Enum.Material.ForceField
+            SafeZone.Parent = game.Workspace
+            HumanoidRootPart.CFrame = SafeZone.CFrame + Vector3.new(0, 5, 0)
+        end
+    })
+
+    -- // Character Tab // --
+    local section = Tabs.Misc:AddSection("Character")
+    local WalkOnWater = Tabs.Misc:AddToggle("WalkOnWater", {Title = "Walk On Water", Default = false })
+    WalkOnWater:OnChanged(function()
+        for i,v in pairs(workspace.zones.fishing:GetChildren()) do
+			if v.Name == WalkZone then
+				v.CanCollide = Options.WalkOnWater.Value
+                if v.Name == "Ocean" then
+                    for i,v in pairs(workspace.zones.fishing:GetChildren()) do
+                        if v.Name == "Deep Ocean" then
+                            v.CanCollide = Options.WalkOnWater.Value
+                        end
+                    end
+                end
+			end
+		end
+    end)
+    local WalkOnWaterZone = Tabs.Misc:AddDropdown("WalkOnWaterZone", {
+        Title = "Walk On Water Zone",
+        Values = {"Ocean", "Desolate Deep", "The Depths"},
+        Multi = false,
+        Default = "Ocean",
+    })
+    WalkOnWaterZone:OnChanged(function(Value)
+        WalkZone = Value
+    end)
+    local WalkSpeedSliderUI = Tabs.Misc:AddSlider("WalkSpeedSliderUI", {
+        Title = "Walk Speed",
+        Min = 16,
+        Max = 200,
+        Default = 16,
+        Rounding = 1,
+    })
+    WalkSpeedSliderUI:OnChanged(function(value)
+        LocalPlayer.Character.Humanoid.WalkSpeed = value
+    end)
+    local JumpHeightSliderUI = Tabs.Misc:AddSlider("JumpHeightSliderUI", {
+        Title = "Jump Height",
+        Min = 50,
+        Max = 200,
+        Default = 50,
+        Rounding = 1,
+    })
+    JumpHeightSliderUI:OnChanged(function(value)
+        LocalPlayer.Character.Humanoid.JumpPower = value
+    end)
+
+    local ToggleNoclip = Tabs.Misc:AddToggle("ToggleNoclip", {Title = "Noclip", Default = false })
+    ToggleNoclip:OnChanged(function()
+        Noclip = Options.ToggleNoclip.Value
+    end)
+
+    -- // Misc Tab // --
+    local section = Tabs.Misc:AddSection("Misc")
+    local BypassRadar = Tabs.Misc:AddToggle("BypassRadar", {Title = "Bypass Fish Radar", Default = false })
+    BypassRadar:OnChanged(function()
+        for _, v in pairs(game:GetService("CollectionService"):GetTagged("radarTag")) do
+			if v:IsA("BillboardGui") or v:IsA("SurfaceGui") then
+				v.Enabled = Options.BypassRadar.Value
+			end
+		end
+    end)
+    local BypassGPS = Tabs.Misc:AddToggle("BypassGPS", {Title = "Bypass GPS", Default = false })
+    BypassGPS:OnChanged(function()
+        if Options.BypassGPS.Value == true then
+            local XyzClone = game:GetService("ReplicatedStorage").resources.items.items.GPS.GPS.gpsMain.xyz:Clone()
+			XyzClone.Parent = game.Players.LocalPlayer.PlayerGui:WaitForChild("hud"):WaitForChild("safezone"):WaitForChild("backpack")
+			local Pos = GetPosition()
+			local StringInput = string.format("%s, %s, %s", ExportValue(Pos[1]), ExportValue(Pos[2]), ExportValue(Pos[3]))
+			XyzClone.Text = "<font color='#ff4949'>X</font><font color = '#a3ff81'>Y</font><font color = '#626aff'>Z</font>: "..StringInput
+			BypassGpsLoop = game:GetService("RunService").Heartbeat:Connect(function()
+				local Pos = GetPosition()
+				StringInput = string.format("%s, %s, %s", ExportValue(Pos[1]), ExportValue(Pos[2]), ExportValue(Pos[3]))
+				XyzClone.Text = "<font color='#ff4949'>X</font><font color = '#a3ff81'>Y</font><font color = '#626aff'>Z</font> : "..StringInput
+			end)
+		else
+			if PlayerGui.hud.safezone.backpack:FindFirstChild("xyz") then
+				PlayerGui.hud.safezone.backpack:FindFirstChild("xyz"):Destroy()
+			end
+			if BypassGpsLoop then
+				BypassGpsLoop:Disconnect()
+				BypassGpsLoop = nil
+			end
+        end
+    end)
+    local RemoveFog = Tabs.Misc:AddToggle("RemoveFog", {Title = "Remove Fog", Default = false })
+    RemoveFog:OnChanged(function()
+        if Options.RemoveFog.Value == true then
+            if game:GetService("Lighting"):FindFirstChild("Sky") then
+                game:GetService("Lighting"):FindFirstChild("Sky").Parent = game:GetService("Lighting").bloom
+            end
+        else
+            if game:GetService("Lighting").bloom:FindFirstChild("Sky") then
+                game:GetService("Lighting").bloom:FindFirstChild("Sky").Parent = game:GetService("Lighting")
+            end
+        end
+    end)
+    local DayOnly = Tabs.Misc:AddToggle("DayOnly", {Title = "Day Only", Default = false })
+    DayOnly:OnChanged(function()
+        if Options.DayOnly.Value == true then
+            DayOnlyLoop = RunService.Heartbeat:Connect(function()
+				game:GetService("Lighting").TimeOfDay = "12:00:00"
+			end)
+		else
+			if DayOnlyLoop then
+				DayOnlyLoop:Disconnect()
+				DayOnlyLoop = nil
+			end
+        end
+    end)
+    local HoldDuration = Tabs.Misc:AddToggle("HoldDuration", {Title = "Hold Duration 0 sec", Default = false })
+    HoldDuration:OnChanged(function()
+        if Options.HoldDuration.Value == true then
+            for i,v in ipairs(game:GetService("Workspace"):GetDescendants()) do
+                if v.ClassName == "ProximityPrompt" then
+                    v.HoldDuration = 0
+                end
+            end
+        end
+    end)
+    local DisableOxygen = Tabs.Misc:AddToggle("DisableOxygen", {Title = "Disable Oxygen", Default = true })
+    DisableOxygen:OnChanged(function()
+        LocalPlayer.Character.client.oxygen.Disabled = Options.DisableOxygen.Value
+    end)
+    Tabs.Misc:AddButton({
+        Title = "Copy XYZ",
+        Description = "Copy Clipboard",
+        Callback = function()
+            local XYZ = tostring(game.Players.LocalPlayer.Character.HumanoidRootPart.Position)
+            setclipboard("game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(" .. XYZ .. ")")
+        end
+    })
+
+    local JustUI = Tabs.Misc:AddToggle("JustUI", {Title = "Show/Hide UIs", Default = true })
+    JustUI:OnChanged(function()
+        local BlackShow = JustUI.Value
+        if BlackShow then
+            PlayerGui.hud.safezone.Visible = true
+        else
+            PlayerGui.hud.safezone.Visible = false
+        end
+    end)
+
+    local IdentityHiderUI = Tabs.Misc:AddToggle("IdentityHiderUI", {Title = "Protect Identity", Default = false })    
+    IdentityHiderUI:OnChanged(function()
+        while Options.IdentityHiderUI.Value == true do
+            if UserPlayer:FindFirstChild("streak") then UserPlayer.streak.Text = "HIDDEN" end
+            if UserPlayer:FindFirstChild("level") then UserPlayer.level.Text = "Level: HIDDEN" end
+            if UserPlayer:FindFirstChild("level") then UserPlayer.user.Text = "HIDDEN" end
+            local hud = LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("hud"):WaitForChild("safezone")
+            if hud:FindFirstChild("coins") then hud.coins.Text = "HIDDEN$" end
+            if hud:FindFirstChild("lvl") then hud.lvl.Text = "HIDDEN LVL" end
+            task.wait(0.01)
+        end
+    end)
+
+end
+
+Window:SelectTab(1)
+Fluent:Notify({
+    Title = "Zyg Hub [V3]",
+    Content = "Executed!",
+    Duration = 8
 })
-
-
-
-
--- UI Settings
-local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
-
--- I set NoUI so it does not show up in the keybinds menu
-MenuGroup:AddButton('Unload', function() Library:Unload() end)
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
-
-Library.ToggleKeybind = Options.MenuKeybind -- Allows you to have a custom keybind for the menu
-
--- Addons:
--- SaveManager (Allows you to have a configuration system)
--- ThemeManager (Allows you to have a menu theme system)
-
--- Hand the library over to our managers
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-
--- Ignore keys that are used by ThemeManager.
--- (we dont want configs to save themes, do we?)
-SaveManager:IgnoreThemeSettings()
-
--- Adds our MenuKeybind to the ignore list
--- (do you want each config to have a different menu key? probably not.)
-SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
-
--- use case for doing it this way:
--- a script hub could have themes in a global folder
--- and game configs in a separate folder per game
-ThemeManager:SetFolder('MyScriptHub')
-SaveManager:SetFolder('MyScriptHub/specific-game')
-
--- Builds our config menu on the right side of our tab
-SaveManager:BuildConfigSection(Tabs['UI Settings'])
-
--- Builds our theme menu (with plenty of built in themes) on the left side
--- NOTE: you can also call ThemeManager:ApplyToGroupbox to add it to a specific groupbox
-ThemeManager:ApplyToTab(Tabs['UI Settings'])
-
--- You can use the SaveManager:LoadAutoloadConfig() to load a config
--- which has been marked to be one that auto loads!
-SaveManager:LoadAutoloadConfig()
