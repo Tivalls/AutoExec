@@ -21,79 +21,122 @@ local Tabs = {
 
 local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Main Scripts')
 
-LeftGroupBox:AddSlider('Walkspeed', {
-    Text = 'Speed Hack',
+-- Speedhack Script with Toggle and Slider
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Global Variables
+_G.HackedWalkSpeed = 16 -- Default value
+local SpeedHackEnabled = false -- Toggle state
+local DefaultWalkSpeed = 16 -- WalkSpeed when toggle is off
+
+-- Function to apply WalkSpeed
+local function ApplyWalkSpeed()
+    local Character = LocalPlayer.Character
+    if Character then
+        local Humanoid = Character:FindFirstChild("Humanoid")
+        if Humanoid then
+            if SpeedHackEnabled then
+                Humanoid.WalkSpeed = _G.HackedWalkSpeed
+            else
+                Humanoid.WalkSpeed = DefaultWalkSpeed
+            end
+        end
+    end
+end
+
+-- Listener for when character respawns
+LocalPlayer.CharacterAdded:Connect(function(Character)
+    repeat wait() until Character:FindFirstChild("Humanoid")
+    local Humanoid = Character.Humanoid
+    Humanoid.Changed:Connect(function()
+        ApplyWalkSpeed()
+    end)
+    ApplyWalkSpeed()
+end)
+
+-- UI Callback for Toggle
+LeftGroupBox:AddToggle('SH', {
+    Text = 'Speedhack',
+    Default = false,
+    Tooltip = 'This is a tooltip',
+
+    Callback = function(Value)
+        SpeedHackEnabled = Value
+        ApplyWalkSpeed() -- Adjust WalkSpeed based on toggle state
+    end
+})
+
+-- UI Callback for Slider
+LeftGroupBox:AddSlider('ST', {
+    Text = 'Speed',
     Default = 16,
     Min = 0,
     Max = 275,
     Rounding = 0,
-    Compact = false,
+    Compact = true,
 
     Callback = function(Value)
-    _G.HackedWalkSpeed = (Value)
- 
-local Plrs = game:GetService("Players")
- 
-local MyPlr = Plrs.LocalPlayer
-local MyChar = MyPlr.Character
- 
-if MyChar then
-local Hum = MyChar.Humanoid
-Hum.Changed:connect(function()
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end)
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end
- 
- 
-MyPlr.CharacterAdded:connect(function(Char)
-MyChar = Char
-repeat wait() until Char:FindFirstChild("Humanoid")
-local Hum = Char.Humanoid
-Hum.Changed:connect(function()
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end)
-Hum.WalkSpeed = _G.HackedWalkSpeed
-end)
+        _G.HackedWalkSpeed = Value
+        if SpeedHackEnabled then
+            ApplyWalkSpeed() -- Update WalkSpeed if toggle is on
+        end
     end
 })
 
-LeftGroupBox:AddSlider('JumpPower', {
-    Text = 'Jump Power',
+
+-- Initialize global variables
+_G.ScriptEnabled = false
+_G.HackedJumpPower = 50
+
+-- Toggle Callback
+LeftGroupBox:AddToggle('SH', {
+    Text = 'Jump power',
+    Default = false,
+    Tooltip = '',
+    Callback = function(Value)
+        _G.ScriptEnabled = Value
+    end
+})
+
+-- Slider Callback
+LeftGroupBox:AddSlider('ST', {
+    Text = 'Power',
     Default = 50,
     Min = 0,
-    Max = 260,
+    Max = 275,
     Rounding = 0,
-    Compact = false,
-
+    Compact = true,
     Callback = function(Value)
-    _G.HackedJumpPower = (Value)
- 
-local Plrs = game:GetService("Players")
- 
-local MyPlr = Plrs.LocalPlayer
-local MyChar = MyPlr.Character
- 
-if MyChar then
-local Hum = MyChar.Humanoid
-Hum.Changed:connect(function()
-Hum.JumpPower = _G.HackedJumpPower
-end)
-Hum.JumpPower = _G.HackedJumpPower
-end
- 
- 
-MyPlr.CharacterAdded:connect(function(Char)
-MyChar = Char
-repeat wait() until Char:FindFirstChild("Humanoid")
-local Hum = Char.Humanoid
-Hum.Changed:connect(function()
-Hum.JumpPower = _G.HackedJumpPower
-end)
-Hum.JumpPower = _G.HackedJumpPower
-end)
+        _G.HackedJumpPower = Value
     end
 })
+
+-- Core script
+local Plrs = game:GetService("Players")
+local MyPlr = Plrs.LocalPlayer
+
+local function applyJumpPower(Humanoid)
+    if _G.ScriptEnabled then
+        Humanoid.JumpPower = _G.HackedJumpPower
+    end
+end
+
+local function onCharacterAdded(Char)
+    repeat wait() until Char:FindFirstChild("Humanoid")
+    local Hum = Char:WaitForChild("Humanoid")
+    Hum.Changed:Connect(function()
+        applyJumpPower(Hum)
+    end)
+    applyJumpPower(Hum)
+end
+
+if MyPlr.Character then
+    onCharacterAdded(MyPlr.Character)
+end
+
+MyPlr.CharacterAdded:Connect(onCharacterAdded)
+
 
 LeftGroupBox:AddDivider()
 
