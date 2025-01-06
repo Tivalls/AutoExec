@@ -162,6 +162,45 @@ end
     Tooltip = 'Allows you to use noclip'
 })
 
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local agilityPath = workspace.Live:FindFirstChild(LocalPlayer.Name):WaitForChild("Agility")
+
+-- Store original agility value
+local originalAgility = agilityPath.Value
+
+-- Toggle Callback
+LeftGroupBox:AddToggle('SH', {
+    Text = 'Agility Spoofer',
+    Default = false,
+    Tooltip = 'Allows you to change your agility',
+    Callback = function(isToggled)
+        if not isToggled then
+            -- Reset to original agility value when toggled off
+            agilityPath.Value = originalAgility
+        end
+    end
+})
+
+-- Slider Callback
+LeftGroupBox:AddSlider('ST', {
+    Text = 'Agility',
+    Default = originalAgility,
+    Min = 0,
+    Max = 175,
+    Rounding = 0,
+    Compact = true,
+    Callback = function(sliderValue)
+        -- Update agility value only if toggle is active
+        if Toggles.SH.Value then
+            agilityPath.Value = sliderValue
+        end
+    end
+})
+
+
+
 LeftGroupBox:AddToggle('No Fall Damage', {
     Text = 'No Fall',
     Default = false,
@@ -220,6 +259,7 @@ UIS.InputBegan:connect(function(UserInput)
 end)
     end
 })
+
 
 
 LeftGroupBox:AddToggle('ChatLogger', {
