@@ -69,7 +69,7 @@ local gameScripts = {
 
 
 
-    [6751580221] = function() -- Replace with your game's PlaceId --BS2
+    [15523167319] = function() -- Replace with your game's PlaceId --BS2
         print("Running Script for Blood Samurai 2")
         loadstring(game:HttpGet("https://pastebin.com/raw/mV4HLUpd"))()
         -- Script logic for Game 3
