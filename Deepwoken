@@ -722,7 +722,10 @@ LeftGroupBox:AddToggle('No KillBricks', {
     Text = 'No Kill Bricks',
     Default = false,
     Tooltip = 'Removes all killbricks',
-    Callback = function(Value)workspace.Layer2Floor1.Layer2KillbrickModel:Destroy()
+    Callback = function(Value)while wait() do
+workspace.Layer2Floor1.SuperWall:Destroy()
+workspace.Layer2Floor1.Layer2KillbrickModel:Destroy()
+end
     end
 })
 
