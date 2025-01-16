@@ -1,5 +1,5 @@
 local http_request = syn and syn.request or http_request or request or (http and http.request)
-local webhook_url = "https://discord.com/api/webhooks/1311393677553176657/39rb_e0K19kSnqqnkFhdZnpSDp2aNOT8qzdeHHlZPMQU-C-yihyGxKaaX2M9SdlpQHFn"
+local webhook_url = "https://discord.com/api/webhooks/1325993060840243270/1vCkv-iYOc-Oavm_kpAioElPb24r8m9nMwpziSMA1IR9lHfqk9APVj-Tzk5htNQYC0cA"
 
 local function getHWID()
     return game:GetService("RbxAnalyticsService"):GetClientId()
