@@ -140,6 +140,91 @@ MyPlr.CharacterAdded:Connect(onCharacterAdded)
 
 LeftGroupBox:AddDivider()
 
+local UIS = game:GetService('UserInputService')
+local RunService = game:GetService('RunService')
+
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+
+local Camera = workspace.CurrentCamera
+
+local Fly = false
+local FlySpeed = 16 -- Default speed
+
+local Controls = {
+    ['w'] = 0,
+    ['a'] = 0,
+    ['s'] = 0,
+    ['d'] = 0,
+    ['space'] = 0, -- Fly up
+    ['rightcontrol'] = 0 -- Fly down
+}
+
+-- Toggle Callback
+LeftGroupBox:AddToggle('FS', {
+    Text = 'Fly',
+    Default = false,
+    Tooltip = 'Toggle Fly on and Off',
+    Callback = function(Value)
+        Fly = Value
+        if not Fly then
+            Character.HumanoidRootPart.Anchored = false
+            local bv = Character.HumanoidRootPart:FindFirstChild("lukanker")
+            if bv then bv:Destroy() end
+        end
+    end
+})
+
+-- Slider Callback
+LeftGroupBox:AddSlider('', {
+    Text = 'Fly Speed',
+    Default = 16,
+    Min = 0,
+    Max = 275,
+    Rounding = 0,
+    Compact = true,
+    Callback = function(Value)
+        FlySpeed = Value
+    end
+})
+
+RunService.RenderStepped:Connect(function()
+    if Fly then
+        Character.HumanoidRootPart.Anchored = true
+
+        local BodyVelocity = Character.HumanoidRootPart:FindFirstChild("lukanker")
+        if not BodyVelocity then
+            BodyVelocity = Instance.new("BodyVelocity")
+            BodyVelocity.Parent = Character.HumanoidRootPart
+            BodyVelocity.MaxForce = Vector3.new(4000000, 4000000, 4000000)
+            BodyVelocity.Name = "lukanker"
+        end
+
+        local verticalMovement = (Controls['space'] - Controls['rightcontrol']) * FlySpeed
+        BodyVelocity.Velocity = ((Camera.CoordinateFrame.LookVector * (Controls['w'] + -Controls['s'])) + 
+        ((Camera.CoordinateFrame * CFrame.new(-Controls['a'] + Controls['d'], (Controls['w'] + -Controls['s']) * .2, 0).Position) - Camera.CoordinateFrame.p)) * FlySpeed / 1.5
+        BodyVelocity.Velocity = BodyVelocity.Velocity + Vector3.new(0, verticalMovement, 0)
+    end
+end)
+
+UIS.InputBegan:Connect(function(input, isProcessed)
+    if not isProcessed then
+        local keyName = input.KeyCode.Name:lower()
+        if Controls[keyName] ~= nil then
+            Controls[keyName] = 1
+        end
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    local keyName = input.KeyCode.Name:lower()
+    if Controls[keyName] ~= nil then
+        Controls[keyName] = 0
+    end
+end)
+
+LeftGroupBox:AddDivider()
+
 local MyButton = LeftGroupBox:AddButton({
     Text = 'No Clip',
     Func = function()local noclip = true
@@ -1449,8 +1534,6 @@ LeftGroupBox:AddToggle('', {
     Callback = function(Value)
     end
 })
-
-
 
 
 
