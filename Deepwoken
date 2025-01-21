@@ -25,69 +25,79 @@ local Tabs = {
 
 local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Main Scripts')
 
--- Speedhack Script with Toggle and Slider
+local RunService = game:GetService("RunService")
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
--- Global Variables
-_G.HackedWalkSpeed = 16 -- Default value
-local SpeedHackEnabled = false -- Toggle state
-local DefaultWalkSpeed = 16 -- WalkSpeed when toggle is off
+local speedHackConnection
+local speedHackBv
+local speedHackEnabled = false
+local speedHackValue = 16  -- Default speed value
 
--- Function to apply WalkSpeed
-local function ApplyWalkSpeed()
-    local Character = LocalPlayer.Character
-    if Character then
-        local Humanoid = Character:FindFirstChild("Humanoid")
-        if Humanoid then
-            if SpeedHackEnabled then
-                Humanoid.WalkSpeed = _G.HackedWalkSpeed
-            else
-                Humanoid.WalkSpeed = DefaultWalkSpeed
-            end
+-- Function to enable or disable speed hack
+local function toggleSpeedHack(toggle)
+    local player = Players.LocalPlayer
+    local character = player and player.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+
+    if toggle then
+        if not speedHackEnabled and humanoid and rootPart then
+            speedHackBv = Instance.new('BodyVelocity')
+            speedHackBv.MaxForce = Vector3.new(100000, 0, 100000)
+            speedHackBv.Velocity = Vector3.new(0, 0, 0)
+            CollectionService:AddTag(speedHackBv, 'AllowedBM')
+            speedHackBv.Parent = rootPart
+
+            speedHackConnection = RunService.Heartbeat:Connect(function()
+                local moveDirection = humanoid.MoveDirection
+                if moveDirection.Magnitude > 0 then
+                    speedHackBv.Velocity = moveDirection * speedHackValue
+                else
+                    speedHackBv.Velocity = Vector3.new(0, 0, 0)
+                end
+            end)
+
+            speedHackEnabled = true
         end
+    else
+        if speedHackConnection then
+            speedHackConnection:Disconnect()
+            speedHackConnection = nil
+        end
+
+        if speedHackBv then
+            speedHackBv:Destroy()
+            speedHackBv = nil
+        end
+
+        speedHackEnabled = false
     end
 end
 
--- Listener for when character respawns
-LocalPlayer.CharacterAdded:Connect(function(Character)
-    repeat wait() until Character:FindFirstChild("Humanoid")
-    local Humanoid = Character.Humanoid
-    Humanoid.Changed:Connect(function()
-        ApplyWalkSpeed()
-    end)
-    ApplyWalkSpeed()
-end)
 
--- UI Callback for Toggle
-LeftGroupBox:AddToggle('SH', {
-    Text = 'Speedhack',
-    Default = false,
-    Tooltip = 'This is a tooltip',
-
-    Callback = function(Value)
-        SpeedHackEnabled = Value
-        ApplyWalkSpeed() -- Adjust WalkSpeed based on toggle state
+LeftGroupBox:AddToggle('', {
+    Text = 'Walkspeed',
+    Default = false, -- Default value (true / false)
+    Tooltip = '', 
+    
+    Callback = function(NewValue)
+        toggleSpeedHack(NewValue)
     end
 })
 
--- UI Callback for Slider
-LeftGroupBox:AddSlider('ST', {
-    Text = 'Speed',
+LeftGroupBox:AddSlider('', {
+    Text = 'Power',
     Default = 16,
     Min = 0,
     Max = 275,
     Rounding = 0,
     Compact = true,
 
-    Callback = function(Value)
-        _G.HackedWalkSpeed = Value
-        if SpeedHackEnabled then
-            ApplyWalkSpeed() -- Update WalkSpeed if toggle is on
-        end
+    Callback = function(NewValue)
+        speedHackValue = NewValue
     end
 })
-
 
 -- Initialize global variables
 _G.ScriptEnabled = false
