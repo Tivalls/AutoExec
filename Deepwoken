@@ -239,27 +239,30 @@ end)
 
 LeftGroupBox:AddDivider()
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'No Clip',
-    Func = function()local noclip = true
-char = game.Players.LocalPlayer.Character
-while true do
-if noclip == true then
-for _,v in pairs(char:children()) do
-pcall(function()
-if v.className == "Part" then
-v.CanCollide = false
-end
-end)
-end
-end
-game:service("RunService").Stepped:wait()
-end
+local noclip = false
+local char = game.Players.LocalPlayer.Character
 
-    end,
-    DoubleClick = false,
-    Tooltip = 'Allows you to use noclip'
+-- Function to toggle noclip on and off
+LeftGroupBox:AddToggle('NoClip', {
+    Text = 'No Clip',
+    Default = false,
+    Tooltip = 'Allows you to clip through walls',
+    Callback = function(Value)
+        noclip = Value
+    end
 })
+
+-- RunService loop to handle noclip functionality
+game:GetService("RunService").Stepped:Connect(function()
+    if noclip then
+        for _, v in pairs(char:GetChildren()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+
 
 
 
