@@ -719,50 +719,53 @@ end)
 Toggles.MyToggle:SetValue(false)
 
 
-
-
-RightGroupBox:AddToggle('MyToggle', {
-    Text = 'Proximity Prompt',
-    Default = false,
-    Tooltip = 'If a player is close to you a gui shows',
-
-    Callback = function(Value)local Players = game:GetService("Players")
+local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "ProximityAlert"
-gui.Parent = player.PlayerGui
+local gui
+local usernameLabel
+local distanceLabel
+local isEnabled = false -- Default to off
 
-local usernameLabel = Instance.new("TextLabel")
-usernameLabel.Size = UDim2.new(0, 300, 0, 30)
-usernameLabel.Position = UDim2.new(0.5, -150, 0, 50) -- Near the top center
-usernameLabel.BackgroundTransparency = 1 -- No background
-usernameLabel.TextColor3 = Color3.new(1, 1, 1) -- White text
-usernameLabel.Font = Enum.Font.SourceSans
-usernameLabel.TextScaled = true
-usernameLabel.Visible = false
-usernameLabel.Parent = gui
+local function createGUI()
+    gui = Instance.new("ScreenGui")
+    gui.Name = "ProximityAlert"
+    gui.Parent = player.PlayerGui
 
-local distanceLabel = Instance.new("TextLabel")
-distanceLabel.Size = UDim2.new(0, 300, 0, 30)
-distanceLabel.Position = UDim2.new(0.5, -150, 0, 80) -- Below username label
-distanceLabel.BackgroundTransparency = 1 -- No background
-distanceLabel.TextColor3 = Color3.new(1, 1, 1) -- White text
-distanceLabel.Font = Enum.Font.SourceSans
-distanceLabel.TextScaled = true
-distanceLabel.Visible = false
-distanceLabel.Parent = gui
+    usernameLabel = Instance.new("TextLabel")
+    usernameLabel.Size = UDim2.new(0, 300, 0, 30)
+    usernameLabel.Position = UDim2.new(0.5, -150, 0, 50)
+    usernameLabel.BackgroundTransparency = 1
+    usernameLabel.TextColor3 = Color3.new(1, 1, 1)
+    usernameLabel.Font = Enum.Font.SourceSans
+    usernameLabel.TextScaled = true
+    usernameLabel.Visible = false
+    usernameLabel.Parent = gui
 
-local isEnabled = true -- Toggles script functionality
+    distanceLabel = Instance.new("TextLabel")
+    distanceLabel.Size = UDim2.new(0, 300, 0, 30)
+    distanceLabel.Position = UDim2.new(0.5, -150, 0, 80)
+    distanceLabel.BackgroundTransparency = 1
+    distanceLabel.TextColor3 = Color3.new(1, 1, 1)
+    distanceLabel.Font = Enum.Font.SourceSans
+    distanceLabel.TextScaled = true
+    distanceLabel.Visible = false
+    distanceLabel.Parent = gui
+end
+
+local function destroyGUI()
+    if gui then
+        gui:Destroy()
+        gui = nil
+        usernameLabel = nil
+        distanceLabel = nil
+    end
+end
 
 local function updateProximity()
-    if not isEnabled then
-        usernameLabel.Visible = false
-        distanceLabel.Visible = false
-        return
-    end
+    if not isEnabled or not gui then return end
 
     local closestPlayer = nil
     local closestDistance = math.huge
@@ -792,19 +795,30 @@ end
 
 local function toggleProximityAlert(state)
     isEnabled = state
-    if not isEnabled then
-        usernameLabel.Visible = false
-        distanceLabel.Visible = false
+    if isEnabled then
+        createGUI()
+    else
+        destroyGUI()
     end
 end
 
-game:GetService("RunService").RenderStepped:Connect(updateProximity)
+game:GetService("RunService").RenderStepped:Connect(function()
+    if isEnabled then
+        updateProximity()
+    end
+end)
 
--- Example usage of toggleProximityAlert
--- Call toggleProximityAlert(true) to enable or toggleProximityAlert(false) to disable the functionality.
-
+-- Example toggle binding
+RightGroupBox:AddToggle('MyToggle', {
+    Text = 'Proximity Prompt',
+    Default = false,
+    Tooltip = 'If a player is close to you, a GUI shows',
+    Callback = function(Value)
+        toggleProximityAlert(Value)
     end
 })
+
+
 
 RightGroupBox:AddToggle('No KillBricks', {
     Text = 'AutoLoot Chest',
