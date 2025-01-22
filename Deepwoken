@@ -301,29 +301,32 @@ _G.ToggleNoFallDamage()
     end
 })
 
-LeftGroupBox:AddToggle('Inf Jump', {
-    Text = 'Infinite Jump',
-    Default = false, -- Default value (true / false)
-    Tooltip = 'Allows you to jump infinetly', -- Information shown when you hover over the toggle
+local Player = game:GetService'Players'.LocalPlayer
+local UIS = game:GetService'UserInputService'
 
-    Callback = function(Value)local Player = game:GetService'Players'.LocalPlayer;
-local UIS = game:GetService'UserInputService';
- 
-_G.JumpHeight = 100;
- 
+_G.JumpHeight = 100
+local InfiniteJumpEnabled = false
+
 function Action(Object, Function) if Object ~= nil then Function(Object); end end
- 
+
 UIS.InputBegan:connect(function(UserInput)
-    if UserInput.UserInputType == Enum.UserInputType.Keyboard and UserInput.KeyCode == Enum.KeyCode.Space then
+    if InfiniteJumpEnabled and UserInput.UserInputType == Enum.UserInputType.Keyboard and UserInput.KeyCode == Enum.KeyCode.Space then
         Action(Player.Character.Humanoid, function(self)
             if self:GetState() == Enum.HumanoidStateType.Jumping or self:GetState() == Enum.HumanoidStateType.Freefall then
                 Action(self.Parent.HumanoidRootPart, function(self)
-                    self.Velocity = Vector3.new(0, _G.JumpHeight, 0);
+                    self.Velocity = Vector3.new(0, _G.JumpHeight, 0)
                 end)
             end
         end)
     end
 end)
+
+LeftGroupBox:AddToggle('Inf Jump', {
+    Text = 'Infinite Jump',
+    Default = false,
+    Tooltip = 'Allows you to jump infinitely',
+    Callback = function(Value)
+        InfiniteJumpEnabled = Value
     end
 })
 
