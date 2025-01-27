@@ -305,6 +305,10 @@ LeftGroupBox:AddSlider('', {
     end
 })
 
+
+
+
+
 RunService.RenderStepped:Connect(function()
     if Fly then
         Character.HumanoidRootPart.Anchored = true
@@ -1328,6 +1332,43 @@ torso.Anchored = not torso.Anchored
     end
 })
 
+RightGroupBox:AddDivider()
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local agilityPath = workspace.Live:FindFirstChild(LocalPlayer.Name):WaitForChild("Agility")
+
+-- Store original agility value
+local originalAgility = agilityPath.Value
+
+-- Toggle Callback
+RightGroupBox:AddToggle('JK', {
+    Text = 'Agility Spoofer',
+    Default = false,
+    Tooltip = 'Allows you to change your agility',
+    Callback = function(isToggled)
+        if not isToggled then
+            -- Reset to original agility value when toggled off
+            agilityPath.Value = originalAgility
+        end
+    end
+})
+
+-- Slider Callback
+RightGroupBox:AddSlider('ST', {
+    Text = 'Agility',
+    Default = originalAgility,
+    Min = 0,
+    Max = 175,
+    Rounding = 0,
+    Compact = true,
+    Callback = function(sliderValue)
+        -- Update agility value only if toggle is active
+        if Toggles.JK.Value then
+            agilityPath.Value = sliderValue
+        end
+    end
+})
 
 
 local LeftGroupBox = Tabs["ESP"]:AddLeftGroupbox('Humanoid')
@@ -1671,7 +1712,6 @@ LeftGroupBox:AddToggle('', {
     Callback = function(Value)
     end
 })
-
 
 
 
