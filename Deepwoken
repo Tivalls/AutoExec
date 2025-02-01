@@ -8,18 +8,22 @@ local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 
+local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
+
 local Window = Library:CreateWindow({
-    Title = 'Zyg Hub [V3]',
+    Title = 'Zyg Hub [V3] {' .. hwid .. '}',
     Center = true,
     AutoShow = true,
     TabPadding = 8,
     MenuFadeTime = 0.2
 })
 
+
 local Tabs = {
     Main = Window:AddTab('Main'),
     ['ESP'] = Window:AddTab('ESP'),
     ['Auto Parry'] = Window:AddTab('Auto Parry'),
+    ['Keybinds'] = Window:AddTab('Keybinds'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
@@ -135,9 +139,8 @@ local Players = game:GetService("Players")
 local speedHackConnection
 local speedHackBv
 local speedHackEnabled = false
-local speedHackValue = 16  -- Default speed value
+local speedHackValue = 16 -- Default speed value
 
--- Function to enable or disable speed hack
 local function toggleSpeedHack(toggle)
     local player = Players.LocalPlayer
     local character = player and player.Character
@@ -178,25 +181,22 @@ local function toggleSpeedHack(toggle)
     end
 end
 
-
-LeftGroupBox:AddToggle('', {
+LeftGroupBox:AddToggle('SpeedHack', {
     Text = 'Walkspeed',
-    Default = false, -- Default value (true / false)
-    Tooltip = '', 
-    
+    Default = false,
+    Tooltip = 'Enables custom walkspeed',
     Callback = function(NewValue)
         toggleSpeedHack(NewValue)
     end
 })
 
-LeftGroupBox:AddSlider('', {
+LeftGroupBox:AddSlider('SpeedValue', {
     Text = 'Power',
     Default = 16,
     Min = 0,
     Max = 275,
     Rounding = 0,
     Compact = true,
-
     Callback = function(NewValue)
         speedHackValue = NewValue
     end
@@ -207,17 +207,17 @@ _G.ScriptEnabled = false
 _G.HackedJumpPower = 50
 
 -- Toggle Callback
-LeftGroupBox:AddToggle('SH', {
-    Text = 'Jump power',
+LeftGroupBox:AddToggle('JumpPowerToggle', {
+    Text = 'Jump Power',
     Default = false,
-    Tooltip = '',
+    Tooltip = 'Enables custom jump power',
     Callback = function(Value)
         _G.ScriptEnabled = Value
     end
 })
 
 -- Slider Callback
-LeftGroupBox:AddSlider('ST', {
+LeftGroupBox:AddSlider('JumpPowerValue', {
     Text = 'Power',
     Default = 50,
     Min = 0,
@@ -255,6 +255,7 @@ end
 MyPlr.CharacterAdded:Connect(onCharacterAdded)
 
 
+
 LeftGroupBox:AddDivider()
 
 local UIS = game:GetService('UserInputService')
@@ -262,7 +263,6 @@ local RunService = game:GetService('RunService')
 
 local Player = game.Players.LocalPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
-
 local Camera = workspace.CurrentCamera
 
 local Fly = false
@@ -278,7 +278,7 @@ local Controls = {
 }
 
 -- Toggle Callback
-LeftGroupBox:AddToggle('FS', {
+LeftGroupBox:AddToggle('FlyToggle', {
     Text = 'Fly',
     Default = false,
     Tooltip = 'Toggle Fly on and Off',
@@ -293,7 +293,7 @@ LeftGroupBox:AddToggle('FS', {
 })
 
 -- Slider Callback
-LeftGroupBox:AddSlider('', {
+LeftGroupBox:AddSlider('FlySpeedSlider', {
     Text = 'Fly Speed',
     Default = 16,
     Min = 0,
@@ -304,10 +304,6 @@ LeftGroupBox:AddSlider('', {
         FlySpeed = Value
     end
 })
-
-
-
-
 
 RunService.RenderStepped:Connect(function()
     if Fly then
@@ -344,13 +340,20 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
+
 LeftGroupBox:AddDivider()
 
-local noclip = false
-local char = game.Players.LocalPlayer.Character
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
--- Function to toggle noclip on and off
-LeftGroupBox:AddToggle('NoClip', {
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+
+local noclip = false
+local noFallDamage = false
+
+-- No Clip Toggle
+LeftGroupBox:AddToggle('NoClipToggle', {
     Text = 'No Clip',
     Default = false,
     Tooltip = 'Allows you to clip through walls',
@@ -359,8 +362,8 @@ LeftGroupBox:AddToggle('NoClip', {
     end
 })
 
--- RunService loop to handle noclip functionality
-game:GetService("RunService").Stepped:Connect(function()
+-- No Clip Functionality
+RunService.Stepped:Connect(function()
     if noclip then
         for _, v in pairs(char:GetChildren()) do
             if v:IsA("BasePart") then
@@ -370,43 +373,34 @@ game:GetService("RunService").Stepped:Connect(function()
     end
 end)
 
-
-
-
-
-
-LeftGroupBox:AddToggle('No Fall Damage', {
+-- No Fall Damage Toggle
+LeftGroupBox:AddToggle('NoFallToggle', {
     Text = 'No Fall',
     Default = false,
-    Callback = function(Value)-- Toggleable no-fall-damage script
-_G.Nofalldamage = _G.Nofalldamage or false
+    Tooltip = 'Prevents fall damage',
+    Callback = function(Value)
+        noFallDamage = Value
+        if noFallDamage then
+            local newpart = Instance.new("Part", workspace)
+            newpart.Name = "nofalldamagebrrrpart"
+            newpart.Transparency = 1
+            newpart.CanCollide = true
+            newpart.Anchored = true
 
-_G.ToggleNoFallDamage = function()
-    _G.Nofalldamage = not _G.Nofalldamage
-    if _G.Nofalldamage then
-        local newpart = Instance.new("Part", workspace)
-        newpart.Name = "nofalldamagebrrrpart"
-        newpart.Transparency = 1
-        newpart.CanCollide = true
-        newpart.Anchored = true
-        game:GetService("RunService"):BindToRenderStep("Esp", Enum.RenderPriority.Last.Value, function()
-            pcall(function()
-                workspace.nofalldamagebrrrpart.Position = game.Players.LocalPlayer.Character.PrimaryPart.Position - Vector3.new(0, 6, 0)
+            RunService:BindToRenderStep("NoFall", Enum.RenderPriority.Last.Value, function()
+                pcall(function()
+                    workspace.nofalldamagebrrrpart.Position = player.Character.PrimaryPart.Position - Vector3.new(0, 6, 0)
+                end)
             end)
-        end)
-    else
-        if workspace:FindFirstChild("nofalldamagebrrrpart") then
-            workspace.nofalldamagebrrrpart:Destroy()
+        else
+            if workspace:FindFirstChild("nofalldamagebrrrpart") then
+                workspace.nofalldamagebrrrpart:Destroy()
+            end
+            RunService:UnbindFromRenderStep("NoFall")
         end
-        game:GetService("RunService"):UnbindFromRenderStep("Esp")
-    end
-end
-
--- Call the function to toggle
-_G.ToggleNoFallDamage()
-
     end
 })
+
 
 local Player = game:GetService'Players'.LocalPlayer
 local UIS = game:GetService'UserInputService'
@@ -416,11 +410,11 @@ local InfiniteJumpEnabled = false
 
 function Action(Object, Function) if Object ~= nil then Function(Object); end end
 
-UIS.InputBegan:connect(function(UserInput)
+UIS.InputBegan:Connect(function(UserInput)
     if InfiniteJumpEnabled and UserInput.UserInputType == Enum.UserInputType.Keyboard and UserInput.KeyCode == Enum.KeyCode.Space then
-        Action(Player.Character.Humanoid, function(self)
+        Action(Player.Character and Player.Character:FindFirstChild("Humanoid"), function(self)
             if self:GetState() == Enum.HumanoidStateType.Jumping or self:GetState() == Enum.HumanoidStateType.Freefall then
-                Action(self.Parent.HumanoidRootPart, function(self)
+                Action(self.Parent:FindFirstChild("HumanoidRootPart"), function(self)
                     self.Velocity = Vector3.new(0, _G.JumpHeight, 0)
                 end)
             end
@@ -436,6 +430,7 @@ LeftGroupBox:AddToggle('Inf Jump', {
         InfiniteJumpEnabled = Value
     end
 })
+
 
 
 
@@ -1324,15 +1319,16 @@ end
 RightGroupBox:AddToggle('Anchor Body/Torso', {
     Text = 'Anchor Body',
     Default = false,
-    Callback = function(Value)local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local torso = character:WaitForChild("Torso")
+    Callback = function(Value)
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local torso = character:FindFirstChild("Torso")
 
-torso.Anchored = not torso.Anchored
+        if torso then
+            torso.Anchored = Value
+        end
     end
 })
-
-RightGroupBox:AddDivider()
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -1342,20 +1338,19 @@ local agilityPath = workspace.Live:FindFirstChild(LocalPlayer.Name):WaitForChild
 local originalAgility = agilityPath.Value
 
 -- Toggle Callback
-RightGroupBox:AddToggle('JK', {
+RightGroupBox:AddToggle('AgilitySpoofToggle', {
     Text = 'Agility Spoofer',
     Default = false,
     Tooltip = 'Allows you to change your agility',
     Callback = function(isToggled)
         if not isToggled then
-            -- Reset to original agility value when toggled off
             agilityPath.Value = originalAgility
         end
     end
 })
 
 -- Slider Callback
-RightGroupBox:AddSlider('ST', {
+RightGroupBox:AddSlider('AgilityValue', {
     Text = 'Agility',
     Default = originalAgility,
     Min = 0,
@@ -1363,13 +1358,120 @@ RightGroupBox:AddSlider('ST', {
     Rounding = 0,
     Compact = true,
     Callback = function(sliderValue)
-        -- Update agility value only if toggle is active
-        if Toggles.JK.Value then
+        if Toggles.AgilitySpoofToggle.Value then
             agilityPath.Value = sliderValue
         end
     end
 })
 
+local TweenService = game:GetService('TweenService')
+local Players = game:GetService('Players')
+local Workspace = game:GetService('Workspace')
+
+local LocalPlayer = Players.LocalPlayer
+
+-- Function to calculate and execute tween teleportation
+local function tweenTeleport(rootPart, position, noWait)
+    if not rootPart or not position then
+        warn("tweenTeleport: Missing rootPart or position")
+        return
+    end
+
+    local distance = (rootPart.Position - position).Magnitude
+    local tween = TweenService:Create(rootPart, TweenInfo.new(distance / 120, Enum.EasingStyle.Linear), {
+        CFrame = CFrame.new(position)
+    })
+
+    tween:Play()
+
+    if not noWait then
+        tween.Completed:Wait()
+    end
+
+    return tween
+end
+
+-- Function to find the closest BloodJar with an ActivatedJar folder
+local function closestBloodJar()
+    local last = math.huge
+    local closest
+
+    local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart')
+    if not rootPart then
+        warn("closestBloodJar: No HumanoidRootPart found")
+        return nil
+    end
+
+    local myPos = rootPart.Position
+    local destructibles = Workspace:FindFirstChild('Destructibles')
+
+    if not destructibles then
+        warn("closestBloodJar: No Destructibles found in Workspace")
+        return nil
+    end
+
+    for _, v in ipairs(destructibles:GetChildren()) do
+        if v.Name == 'BloodJar' and v:FindFirstChild('ActivatedJar') then
+            local pos = v:IsA('BasePart') and v.Position or v:GetPivot().Position
+
+            if (pos - myPos).Magnitude < last then
+                closest = v
+                last = (pos - myPos).Magnitude
+            end
+        end
+    end
+
+    return closest
+end
+
+-- Function to teleport to the closest BloodJar
+local function teleportToClosestBloodJar()
+    local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart')
+    if not rootPart then
+        warn("teleportToClosestBloodJar: No HumanoidRootPart found")
+        return false
+    end
+
+    local jar = closestBloodJar()
+    if not jar then
+        warn("teleportToClosestBloodJar: No suitable BloodJar found")
+        return false
+    end
+
+    local targetPosition = jar:IsA('BasePart') and jar.Position or jar:GetPivot().Position
+    tweenTeleport(rootPart, targetPosition, true)
+    return true
+end
+
+-- Toggle state variable
+local isToggled = false
+
+-- Function to enable or disable teleportation
+local function toggleTeleportation(enabled)
+    isToggled = enabled
+    if isToggled then
+        print("Teleportation Enabled")
+        while isToggled do
+            local teleported = teleportToClosestBloodJar()
+            if not teleported then
+                isToggled = false
+                print("No more suitable BloodJars. Teleportation Disabled")
+            end
+            wait(0.1)  -- Adjust the wait time as needed
+        end
+    else
+        print("Teleportation Disabled")
+    end
+end
+
+LeftGroupBox:AddToggle('Tween To Blood Jars', {
+    Text = 'Auto-BloodJars',
+    Default = false,
+    Tooltip = 'Hides No Clip keybind from Keybind Menu',
+    Callback = function(enabled)
+        toggleTeleportation(enabled)
+    end
+})
 
 local LeftGroupBox = Tabs["ESP"]:AddLeftGroupbox('Humanoid')
 
@@ -1717,22 +1819,104 @@ LeftGroupBox:AddToggle('', {
 
 
 
+local LeftGroupBox = Tabs["Keybinds"]:AddLeftGroupbox('Chooser')
+
+LeftGroupBox:AddLabel('Anchor Toggle Keybind'):AddKeyPicker('AnchorKeybind', {
+    Default = 'P',
+    SyncToggleState = true, -- This ensures the keybind syncs with the toggle
+    Mode = 'Toggle',
+    Text = 'Anchor Body',
+    NoUI = false,
+})
+
+Options.AnchorKeybind:OnClick(function()
+    Toggles["Anchor Body/Torso"]:SetValue(not Toggles["Anchor Body/Torso"].Value)
+end)
+
+LeftGroupBox:AddLabel('Infinite Jump Keybind'):AddKeyPicker('InfJumpKeybind', {
+    Default = 'J', -- Default toggle key
+    SyncToggleState = true,
+    Mode = 'Toggle',
+    Text = 'Infinite Jump',
+    NoUI = false,
+})
+
+Options.InfJumpKeybind:OnClick(function()
+    Toggles["Inf Jump"]:SetValue(not Toggles["Inf Jump"].Value)
+end)
 
 
+LeftGroupBox:AddLabel('Speed Hack Keybind'):AddKeyPicker('SpeedHackKeybind', {
+    Default = 'K', -- Default key to toggle speed hack
+    SyncToggleState = true,
+    Mode = 'Toggle',
+    Text = 'Walkspeed',
+    NoUI = false,
+})
 
+Options.SpeedHackKeybind:OnClick(function()
+    Toggles["SpeedHack"]:SetValue(not Toggles["SpeedHack"].Value)
+end)
 
+LeftGroupBox:AddLabel('Jump Power Keybind'):AddKeyPicker('JumpPowerKeybind', {
+    Default = 'H', -- Default key to toggle jump power
+    SyncToggleState = true,
+    Mode = 'Toggle',
+    Text = 'Jump Power',
+    NoUI = false,
+})
 
+Options.JumpPowerKeybind:OnClick(function()
+    Toggles["JumpPowerToggle"]:SetValue(not Toggles["JumpPowerToggle"].Value)
+end)
 
+LeftGroupBox:AddLabel('Fly Keybind'):AddKeyPicker('FlyKeybind', {
+    Default = 'M', -- Default key to toggle fly
+    SyncToggleState = true,
+    Mode = 'Toggle',
+    Text = 'Fly',
+    NoUI = false,
+})
 
+Options.FlyKeybind:OnClick(function()
+    Toggles["FlyToggle"]:SetValue(not Toggles["FlyToggle"].Value)
+end)
 
+LeftGroupBox:AddLabel('No Fall Damage Keybind'):AddKeyPicker('NoFallKeybind', {
+    Default = 'U', -- Default key for No Fall Damage
+    SyncToggleState = true,
+    Mode = 'Toggle',
+    Text = 'No Fall Damage',
+    NoUI = false,
+})
 
+Options.NoFallKeybind:OnClick(function()
+    Toggles["NoFallToggle"]:SetValue(not Toggles["NoFallToggle"].Value)
+end)
 
+LeftGroupBox:AddLabel('No Clip Keybind'):AddKeyPicker('NoClipKeybind', {
+    Default = 'L', -- Default key for No Clip
+    SyncToggleState = true,
+    Mode = 'Toggle',
+    Text = 'No Clip',
+    NoUI = false,
+})
 
+Options.NoClipKeybind:OnClick(function()
+    Toggles["NoClipToggle"]:SetValue(not Toggles["NoClipToggle"].Value)
+end)
 
+LeftGroupBox:AddLabel('Agility Spoof Keybind'):AddKeyPicker('AgilitySpoofKeybind', {
+    Default = '', -- Default key to toggle agility spoofer
+    SyncToggleState = true,
+    Mode = 'Toggle',
+    Text = 'Agility Spoofer',
+    NoUI = false,
+})
 
-
-
-
+Options.AgilitySpoofKeybind:OnClick(function()
+    Toggles["AgilitySpoofToggle"]:SetValue(not Toggles["AgilitySpoofToggle"].Value)
+end)
 
 
 
