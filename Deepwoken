@@ -131,46 +131,6 @@ UserInputService.InputBegan:Connect(function(inputObject)
 end)
 
 
---Moderator Join Script
-local groupId = 5212858
-local players = game:GetService("Players")
-local soundService = game:GetService("SoundService")
-
-local function playSound(soundId)
-    local sound = Instance.new("Sound")
-    sound.SoundId = "rbxassetid://" .. soundId
-    sound.Volume = 1
-    sound.Parent = soundService
-    sound:Play()
-    game:GetService("Debris"):AddItem(sound, 3)
-end
-
-Library:Notify("Checking players for group membership...", 5)
-
-local function checkPlayer(player)
-    local playerName = player.Name
-    Library:Notify("Checking: " .. playerName, 3)
-    
-    if player:IsInGroup(groupId) then
-        Library:Notify(playerName .. " (Moderator) has joined the game!", 5)
-        playSound("134569069127046")
-
-        player.AncestryChanged:Connect(function()
-            if not player.Parent then
-                Library:Notify(playerName .. " (Moderator) has left the game!", 5)
-                playSound("126849058770164")
-            end
-        end)
-    end
-end
-
-for _, player in ipairs(players:GetPlayers()) do
-    checkPlayer(player)
-end
-
-players.PlayerAdded:Connect(checkPlayer)
-
-
 
 local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Main Scripts')
 
@@ -2169,3 +2129,42 @@ ThemeManager:ApplyToTab(Tabs['UI Settings'])
 -- You can use the SaveManager:LoadAutoloadConfig() to load a config
 -- which has been marked to be one that auto loads!
 SaveManager:LoadAutoloadConfig()
+
+--Moderator Join Script
+local groupId = 5212858
+local players = game:GetService("Players")
+local soundService = game:GetService("SoundService")
+
+local function playSound(soundId)
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://" .. soundId
+    sound.Volume = 1
+    sound.Parent = soundService
+    sound:Play()
+    game:GetService("Debris"):AddItem(sound, 3)
+end
+
+Library:Notify("Checking players for group membership...", 5)
+
+local function checkPlayer(player)
+    local playerName = player.Name
+    Library:Notify("Checking: " .. playerName, 3)
+    
+    if player:IsInGroup(groupId) then
+        Library:Notify(playerName .. " (Moderator) has joined the game!", 5)
+        playSound("134569069127046")
+
+        player.AncestryChanged:Connect(function()
+            if not player.Parent then
+                Library:Notify(playerName .. " (Moderator) has left the game!", 5)
+                playSound("126849058770164")
+            end
+        end)
+    end
+end
+
+for _, player in ipairs(players:GetPlayers()) do
+    checkPlayer(player)
+end
+
+players.PlayerAdded:Connect(checkPlayer)
