@@ -1795,7 +1795,7 @@ Options.SpeedHackKeybind:OnClick(function()
 end)
 
 LeftGroupBox:AddLabel('Jump Power Keybind'):AddKeyPicker('JumpPowerKeybind', {
-    Default = 'H', -- Default key to toggle jump power
+    Default = 'J', -- Default key to toggle jump power
     SyncToggleState = true,
     Mode = 'Toggle',
     Text = 'Jump Power',
