@@ -299,7 +299,7 @@ LeftGroupBox:AddSlider('FlySpeedSlider', {
     Text = 'Fly Speed',
     Default = 16,
     Min = 0,
-    Max = 275,
+    Max = 325,
     Rounding = 0,
     Compact = true,
     Callback = function(Value)
