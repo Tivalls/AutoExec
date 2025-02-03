@@ -23,7 +23,6 @@ local Tabs = {
     Main = Window:AddTab('Main'),
     ['ESP'] = Window:AddTab('ESP'),
     ['Auto Parry'] = Window:AddTab('Auto Parry'),
-    ['Keybinds'] = Window:AddTab('Keybinds'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
@@ -190,6 +189,11 @@ LeftGroupBox:AddToggle('SpeedHack', {
     Callback = function(NewValue)
         toggleSpeedHack(NewValue)
     end
+}):AddKeyPicker('SpeedHackKeybind', {
+    Default = 'K',
+    Mode = 'Toggle',
+    Text = 'Walkspeed Keybind',
+    NoUI = false
 })
 
 LeftGroupBox:AddSlider('SpeedValue', {
@@ -216,6 +220,11 @@ LeftGroupBox:AddToggle('JumpPowerToggle', {
     Callback = function(Value)
         _G.ScriptEnabled = Value
     end
+}):AddKeyPicker('JumpPowerKeybind', {
+    Default = 'H',
+    Mode = 'Toggle',
+    Text = 'Jump Power Keybind',
+    NoUI = false
 })
 
 -- Slider Callback
@@ -292,6 +301,11 @@ LeftGroupBox:AddToggle('FlyToggle', {
             if bv then bv:Destroy() end
         end
     end
+}):AddKeyPicker('FlyKeybind', {
+    Default = 'M',
+    Mode = 'Toggle',
+    Text = 'Fly Keybind',
+    NoUI = false
 })
 
 -- Slider Callback
@@ -362,6 +376,11 @@ LeftGroupBox:AddToggle('NoClipToggle', {
     Callback = function(Value)
         noclip = Value
     end
+}):AddKeyPicker('NoClipKeybind', {
+    Default = 'L',
+    Mode = 'Toggle',
+    Text = 'No Clip Keybind',
+    NoUI = false
 })
 
 -- No Clip Functionality
@@ -401,6 +420,11 @@ LeftGroupBox:AddToggle('NoFallToggle', {
             RunService:UnbindFromRenderStep("NoFall")
         end
     end
+}):AddKeyPicker('NoFallKeybind', {
+    Default = 'U',
+    Mode = 'Toggle',
+    Text = 'No Fall Damage Keybind',
+    NoUI = false
 })
 
 
@@ -431,6 +455,11 @@ LeftGroupBox:AddToggle('Inf Jump', {
     Callback = function(Value)
         InfiniteJumpEnabled = Value
     end
+}):AddKeyPicker('InfJumpKeybind', {
+    Default = 'J',
+    Mode = 'Toggle',
+    Text = 'Infinite Jump Keybind',
+    NoUI = false
 })
 
 
@@ -1404,6 +1433,11 @@ RightGroupBox:AddToggle('Anchor Body/Torso', {
             torso.Anchored = Value
         end
     end
+}):AddKeyPicker('AnchorKeybind', {
+    Default = 'P',
+    Mode = 'Toggle',
+    Text = 'Anchor Body Keybind',
+    NoUI = false
 })
 
 local Players = game:GetService("Players")
@@ -1789,154 +1823,6 @@ LeftGroupBox:AddToggle('', {
 
 
 
-local LeftGroupBox = Tabs["Keybinds"]:AddLeftGroupbox('Chooser')
-
-LeftGroupBox:AddLabel('Anchor Toggle Keybind'):AddKeyPicker('AnchorKeybind', {
-    Default = 'P',
-    SyncToggleState = true, -- This ensures the keybind syncs with the toggle
-    Mode = 'Toggle',
-    Text = 'Anchor Body',
-    NoUI = false,
-})
-
-Options.AnchorKeybind:OnClick(function()
-    Toggles["Anchor Body/Torso"]:SetValue(not Toggles["Anchor Body/Torso"].Value)
-end)
-
-LeftGroupBox:AddLabel('Infinite Jump Keybind'):AddKeyPicker('InfJumpKeybind', {
-    Default = 'J', -- Default toggle key
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Infinite Jump',
-    NoUI = false,
-})
-
-Options.InfJumpKeybind:OnClick(function()
-    Toggles["Inf Jump"]:SetValue(not Toggles["Inf Jump"].Value)
-end)
-
-
-LeftGroupBox:AddLabel('Speed Hack Keybind'):AddKeyPicker('SpeedHackKeybind', {
-    Default = 'K', -- Default key to toggle speed hack
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Walkspeed',
-    NoUI = false,
-})
-
-Options.SpeedHackKeybind:OnClick(function()
-    Toggles["SpeedHack"]:SetValue(not Toggles["SpeedHack"].Value)
-end)
-
-LeftGroupBox:AddLabel('Jump Power Keybind'):AddKeyPicker('JumpPowerKeybind', {
-    Default = 'H', -- Default key to toggle jump power
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Jump Power',
-    NoUI = false,
-})
-
-Options.JumpPowerKeybind:OnClick(function()
-    Toggles["JumpPowerToggle"]:SetValue(not Toggles["JumpPowerToggle"].Value)
-end)
-
-LeftGroupBox:AddLabel('Fly Keybind'):AddKeyPicker('FlyKeybind', {
-    Default = 'M', -- Default key to toggle fly
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Fly',
-    NoUI = false,
-})
-
-Options.FlyKeybind:OnClick(function()
-    Toggles["FlyToggle"]:SetValue(not Toggles["FlyToggle"].Value)
-end)
-
-LeftGroupBox:AddLabel('No Fall Damage Keybind'):AddKeyPicker('NoFallKeybind', {
-    Default = 'U', -- Default key for No Fall Damage
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'No Fall Damage',
-    NoUI = false,
-})
-
-Options.NoFallKeybind:OnClick(function()
-    Toggles["NoFallToggle"]:SetValue(not Toggles["NoFallToggle"].Value)
-end)
-
-LeftGroupBox:AddLabel('No Clip Keybind'):AddKeyPicker('NoClipKeybind', {
-    Default = 'L', -- Default key for No Clip
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'No Clip',
-    NoUI = false,
-})
-
-Options.NoClipKeybind:OnClick(function()
-    Toggles["NoClipToggle"]:SetValue(not Toggles["NoClipToggle"].Value)
-end)
-
-LeftGroupBox:AddLabel('Agility Spoof Keybind'):AddKeyPicker('AgilitySpoofKeybind', {
-    Default = '', -- Default key to toggle agility spoofer
-    SyncToggleState = true,
-    Mode = 'Toggle',
-    Text = 'Agility Spoofer',
-    NoUI = false,
-})
-
-Options.AgilitySpoofKeybind:OnClick(function()
-    Toggles["AgilitySpoofToggle"]:SetValue(not Toggles["AgilitySpoofToggle"].Value)
-end)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2092,3 +1978,31 @@ for _, player in ipairs(players:GetPlayers()) do
 end
 
 players.PlayerAdded:Connect(checkPlayer)
+
+Options.SpeedHackKeybind:OnClick(function()
+    Toggles.SpeedHack:SetValue(not Toggles.SpeedHack.Value)
+end)
+
+Options.JumpPowerKeybind:OnClick(function()
+    Toggles.JumpPowerToggle:SetValue(not Toggles.JumpPowerToggle.Value)
+end)
+
+Options.FlyKeybind:OnClick(function()
+    Toggles.FlyToggle:SetValue(not Toggles.FlyToggle.Value)
+end)
+
+Options.NoClipKeybind:OnClick(function()
+    Toggles.NoClipToggle:SetValue(not Toggles.NoClipToggle.Value)
+end)
+
+Options.NoFallKeybind:OnClick(function()
+    Toggles.NoFallToggle:SetValue(not Toggles.NoFallToggle.Value)
+end)
+
+Options.InfJumpKeybind:OnClick(function()
+    Toggles["Inf Jump"]:SetValue(not Toggles["Inf Jump"].Value)
+end)
+
+Options.AnchorKeybind:OnClick(function()
+    Toggles["Anchor Body/Torso"]:SetValue(not Toggles["Anchor Body/Torso"].Value)
+end)
