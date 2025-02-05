@@ -578,9 +578,9 @@ local MyButton = LeftGroupBox:AddButton({
 
 LeftGroupBox:AddSlider('Grapics Slider', {
     Text = 'Graphics settings',
-    Default = 5,
+    Default = 10,
     Min = 0,
-    Max = 10,
+    Max = 20,
     Rounding = 0,
     Compact = false,
 
@@ -1440,6 +1440,52 @@ RightGroupBox:AddToggle('Anchor Body/Torso', {
     NoUI = false
 })
 
+RightGroupBox:AddToggle('', {
+    Text = 'Auto Unragdoll',
+    Default = false,
+    Tooltip = 'Automatically Unragdolls for you',
+    Callback = function(Value)
+    -- Script to automatically unragdoll when toggled via a function
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+
+local isToggled = false
+
+-- Function to simulate M2 press
+local function pressM2()
+    UserInputService.InputBegan:Fire({
+        KeyCode = Enum.UserInputType.MouseButton2,
+        UserInputState = Enum.UserInputState.Begin
+    })
+    wait(0.1) -- Short delay to simulate a real press
+    UserInputService.InputEnded:Fire({
+        KeyCode = Enum.UserInputType.MouseButton2,
+        UserInputState = Enum.UserInputState.End
+    })
+end
+
+-- Function to check ragdoll status
+local function isRagdolled()
+    return Character:FindFirstChild("RagdollConstraint") ~= nil
+end
+
+-- Function to toggle the script
+function toggleUnragdoll(state)
+    isToggled = state
+end
+
+-- Main loop
+RunService.Heartbeat:Connect(function()
+    if isToggled and isRagdolled() then
+        pressM2()
+    end
+end)
+
+    end
+})
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local agilityPath = workspace.Live:FindFirstChild(LocalPlayer.Name):WaitForChild("Agility")
@@ -1777,12 +1823,171 @@ end
 
 local LeftGroupBox = Tabs["Auto Parry"]:AddRightGroupbox('Configuration')
 
-LeftGroupBox:AddToggle('', {
+-- Ensure cloneref exists
+if not cloneref then
+    return
+end
+
+-- Get required services
+local UserInputService = cloneref(game:GetService("UserInputService"))
+local RunService = cloneref(game:GetService("RunService"))
+local Players = cloneref(game:GetService("Players"))
+local LocalPlayer = Players.LocalPlayer
+
+-- Virtual input for safe key pressing
+local VirtualInput = cloneref(game:GetService("VirtualInputManager"))
+
+-- Entity storage
+local EntityFolder = cloneref(workspace:WaitForChild("Live"))
+
+-- Toggles
+local AutoParryEnabled = false
+local AutoDodgeEnabled = true
+
+-- Cooldown system
+local LastParryTime = 0
+local LastDodgeTime = 0
+local ParryCooldown = 0.3 -- Prevents spam
+local DodgeCooldown = 1 -- Prevents frequent dodging
+
+-- Reaction delay (randomized for evasion)
+local function GetReactionTime()
+    return math.random(0.08, 0.15) -- 80ms - 150ms delay
+end
+
+-- Animation log storage
+local LoggedAnimations = {}
+
+-- Prevent spamming debug messages
+local DebugWarningShown = false
+
+-- Function to debug toggle conflicts
+local function DebugToggleConflict()
+    if AutoParryEnabled and AutoDodgeEnabled and not DebugWarningShown then
+        DebugWarningShown = true -- Prevent spam
+    elseif not AutoParryEnabled or not AutoDodgeEnabled then
+        DebugWarningShown = false -- Reset warning if conflict is resolved
+    end
+end
+
+-- Function to perform a parry
+local function PerformParry()
+    task.wait(GetReactionTime()) -- Add reaction delay
+
+    -- Simulate parry key press
+    VirtualInput:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
+    task.wait(0.05) -- Short press duration
+    VirtualInput:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
+
+    -- Update parry cooldown
+    LastParryTime = tick()
+end
+
+-- Function to perform a dodge
+local function PerformDodge()
+    task.wait(GetReactionTime()) -- Add reaction delay
+
+    -- Simulate dodge key press (replace "Q" with your game's dodge key)
+    VirtualInput:SendKeyEvent(true, Enum.KeyCode.Q, false, nil)
+    task.wait(0.05) -- Short press duration
+    VirtualInput:SendKeyEvent(false, Enum.KeyCode.Q, false, nil)
+
+    -- Update dodge cooldown
+    LastDodgeTime = tick()
+end
+
+-- Feint detection and handling
+local function HandleFeint(Humanoid)
+    for _, Track in pairs(Humanoid:GetPlayingAnimationTracks()) do
+        local IsFeinting = Track.Name:lower():find("feint") -- Adjust to your game's naming for feints
+        if IsFeinting then
+            if AutoDodgeEnabled then
+                PerformDodge() -- Dodge when feint is detected
+            end
+            return true
+        end
+    end
+    return false
+end
+
+-- AutoParry and Dodge logic
+local function AutoParryAndDodge()
+    DebugToggleConflict() -- Check for conflicts
+
+    local Character = LocalPlayer.Character
+    if not Character then return end
+
+    -- Check if the player is attacking
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+    if Humanoid then
+        for _, Track in pairs(Humanoid:GetPlayingAnimationTracks()) do
+            local IsAttacking = Track.Name:lower():find("attack") -- Adjust to your game's attack naming
+            if IsAttacking and AutoParryEnabled then
+                -- Simulate feint if attacking
+                VirtualInput:SendMouseButtonEvent(0, 0, 0, true, nil, 0) -- M2 (Right Mouse Button) press
+                task.wait(0.05)
+                VirtualInput:SendMouseButtonEvent(0, 0, 0, false, nil, 0) -- M2 release
+                return
+            end
+        end
+    end
+
+    -- Loop through enemies
+    for _, Entity in pairs(EntityFolder:GetChildren()) do
+        if Entity ~= Character and Entity:FindFirstChild("HumanoidRootPart") then
+            local Distance = (Entity.HumanoidRootPart.Position - Character.HumanoidRootPart.Position).Magnitude
+
+            -- Detect attack or feint animation
+            local EnemyHumanoid = Entity:FindFirstChildOfClass("Humanoid")
+            if EnemyHumanoid and Distance < 10 then -- Adjust range as needed
+                if HandleFeint(EnemyHumanoid) then return end -- Dodge if feint is detected
+
+                -- Parry logic
+                if AutoParryEnabled and tick() - LastParryTime >= ParryCooldown then
+                    PerformParry()
+                elseif AutoDodgeEnabled and tick() - LastDodgeTime >= DodgeCooldown then
+                    PerformDodge()
+                end
+            end
+        end
+    end
+end
+
+-- UI Toggles
+LeftGroupBox:AddToggle('APK', {
     Text = 'Auto Parry',
     Default = false,
+    Tooltip = 'Enable or disable auto parry',
     Callback = function(Value)
+        AutoParryEnabled = Value
+        DebugToggleConflict()
     end
+}):AddKeyPicker('AutoParryKeybind', {
+    Default = '',
+    Mode = 'Toggle',
+    Text = 'AP Keybind',
+    NoUI = false
 })
+
+
+LeftGroupBox:AddToggle('ADK', {
+    Text = 'Auto Dodge',
+    Default = false,
+    Tooltip = 'Enable or disable auto dodge',
+    Callback = function(Value)
+        AutoDodgeEnabled = Value
+        DebugToggleConflict()
+    end
+}):AddKeyPicker('AutoDodgeKeybind', {
+    Default = '',
+    Mode = 'Toggle',
+    Text = 'AD Keybind',
+    NoUI = false
+})
+
+-- Connect AutoParryAndDodge function to RunService
+RunService.RenderStepped:Connect(AutoParryAndDodge)
+
 
 LeftGroupBox:AddToggle('', {
     Text = 'AP Debbuger',
@@ -1977,10 +2182,10 @@ for _, player in ipairs(players:GetPlayers()) do
     checkPlayer(player)
 end
 
-
---Keybinds
 players.PlayerAdded:Connect(checkPlayer)
 
+
+--Keybinds
 Options.SpeedHackKeybind:OnClick(function()
     Toggles.SpeedHack:SetValue(not Toggles.SpeedHack.Value)
 end)
@@ -2007,4 +2212,12 @@ end)
 
 Options.AnchorKeybind:OnClick(function()
     Toggles["Anchor Body/Torso"]:SetValue(not Toggles["Anchor Body/Torso"].Value)
+end)
+
+Options.AutoParryKeybind:OnClick(function()
+    Toggles.APK:SetValue(not Toggles.APK.Value)
+end)
+
+Options.NoFallKeybind:OnClick(function()
+    Toggles.ADK:SetValue(not Toggles.ADK.Value)
 end)
