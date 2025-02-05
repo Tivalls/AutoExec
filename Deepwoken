@@ -131,7 +131,7 @@ end)
 
 
 
-local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Main Scripts')
+local LeftGroupBox: any = Tabs["Main"]:AddLeftGroupbox('Main Scripts')
 
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
@@ -394,31 +394,22 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- No Fall Damage Toggle
+local old
+old = hookmetamethod(game, "__namecall", function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+    if nofall and typeof(args[1]) == "number" and args[2] == false and method == "FireServer" and self.Parent == game.ReplicatedStorage.Requests then
+        return nil -- Prevents the call when No Fall is enabled
+    end
+    return old(self, unpack(args)) -- Default behavior when No Fall is off
+end)
+
 LeftGroupBox:AddToggle('NoFallToggle', {
     Text = 'No Fall',
     Default = false,
-    Tooltip = 'Prevents fall damage',
+    Tooltip = 'Allows you to not take fall damage',
     Callback = function(Value)
-        noFallDamage = Value
-        if noFallDamage then
-            local newpart = Instance.new("Part", workspace)
-            newpart.Name = "nofalldamagebrrrpart"
-            newpart.Transparency = 1
-            newpart.CanCollide = true
-            newpart.Anchored = true
-
-            RunService:BindToRenderStep("NoFall", Enum.RenderPriority.Last.Value, function()
-                pcall(function()
-                    workspace.nofalldamagebrrrpart.Position = player.Character.PrimaryPart.Position - Vector3.new(0, 6, 0)
-                end)
-            end)
-        else
-            if workspace:FindFirstChild("nofalldamagebrrrpart") then
-                workspace.nofalldamagebrrrpart:Destroy()
-            end
-            RunService:UnbindFromRenderStep("NoFall")
-        end
+        nofall = Value -- Toggles the state of the script
     end
 }):AddKeyPicker('NoFallKeybind', {
     Default = 'U',
@@ -1078,45 +1069,6 @@ LeftGroupBox:AddToggle('', {
 
 local RightGroupBox = Tabs["Main"]:AddRightGroupbox('Humanoid')
 
-RightGroupBox:AddToggle('MyToggle', {
-    Text = 'Mob AI Breaker',
-    Default = false,
-    Tooltip = 'Breaks how mobs agro you',
-
-    Callback = function(Value)local userInputService = game:GetService("UserInputService")
-local runService = game:GetService("RunService")
-local localPlayer = game:GetService("Players").LocalPlayer
-local downwardsVector = Vector3.new(0, -1000, 0)
-
-local toggle = false -- Initial state
-local heartbeatConnection -- Variable to store the Heartbeat connection
-
--- Toggle function
-function toggleScript()
-    toggle = not toggle
-    if toggle then
-        -- Connect the Heartbeat function
-        heartbeatConnection = runService.Heartbeat:Connect(function()
-            local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                hrp.Velocity = (hrp.CFrame.LookVector.Unit * 20) + downwardsVector
-            end
-        end)
-    else
-        -- Disconnect the Heartbeat function
-        if heartbeatConnection then
-            heartbeatConnection:Disconnect()
-            heartbeatConnection = nil
-        end
-    end
-end
-
--- Call this function to toggle the script on/off
-toggleScript() -- Example: Start as toggled on
-
-    end
-})
-
 RightGroupBox:AddToggle('Boobwoken', {
     Text = 'Boobwoken',
     Default = false,
@@ -1520,6 +1472,67 @@ RightGroupBox:AddSlider('AgilityValue', {
     end
 })
 
+local RightGroupBox: any = Tabs["Main"]:AddRightGroupbox('Mobs')
+
+RightGroupBox:AddToggle('VM_Toggle', {
+    Text = 'Void Mobs',
+    Default = false,
+    Tooltip = 'Allows you to Teleport Mobs Into The Void',
+    Callback = function(Value)
+        local voidmobs = Value
+        if voidcon then voidcon:Disconnect() end
+        if voidmobs then 
+            voidcon = game.RunService.RenderStepped:Connect(function()
+                if not voidmobs then return end
+                for i, v in pairs(workspace.Live:GetChildren()) do
+                    if v ~= game.Players.LocalPlayer.Character then
+                        if v:FindFirstChild("HumanoidRootPart") and isnetworkowner(v.HumanoidRootPart) then
+                            for i = 1, 15 do
+                                v.HumanoidRootPart.CFrame = CFrame.new(-9e9, -v:GetExtentsSize().Y - v:GetPivot().Y - workspace.FallenPartsDestroyHeight - 500000, -9e9)
+                                v:PivotTo(CFrame.new(-9e9, -v:GetExtentsSize().Y - v:GetPivot().Y - workspace.FallenPartsDestroyHeight - 500000, -9e9))    
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+
+RightGroupBox:AddToggle('BMA_Toggle', {
+    Text = 'Break Humanoid Mobs AI',
+    Default = false,
+    Tooltip = 'Allows you to Teleport Mobs To Your player',
+    Callback = function(Value)
+        local breakmobai = Value
+        game:GetService("RunService").Heartbeat:Connect(function()
+            if not breakmobai then return end
+            local localPlayer = {["humanoid"] = game.Players.LocalPlayer.Character.Humanoid, ["character"] = game.Players.LocalPlayer.Character}
+            local velocitys = {};
+            local moving = localPlayer.humanoid.MoveDirection.Magnitude > 0;
+
+            for i, v in pairs(localPlayer.character:GetChildren()) do
+                if not v:IsA("BasePart") then continue; end
+                velocitys[v.Name] = v.Velocity;
+            end
+            for i, v in pairs(localPlayer.character:GetChildren()) do
+                if not v:IsA("BasePart") then continue; end
+                v.Velocity = Vector3.new(moving and 9e9 or 0, moving and 9e9 or true and 9e9 or 0, moving and 9e9 or 0);
+            end
+            game:GetService("RunService").RenderStepped:Wait()
+            for i, v in pairs(localPlayer.character:GetChildren()) do
+                if not v:IsA("BasePart") then continue; end
+                v.Velocity = velocitys[v.Name];
+            end
+        end)
+    end
+})
+
+
+
+
+
 
 
 
@@ -1613,10 +1626,6 @@ toggleESP()
 
     end
 })
-
-
-
-
 
 LeftGroupBox:AddToggle('Mob ESP', {
     Text = 'Mobs',
@@ -1817,6 +1826,7 @@ end
 
     end
 })
+
 
 
 
@@ -2218,6 +2228,6 @@ Options.AutoParryKeybind:OnClick(function()
     Toggles.APK:SetValue(not Toggles.APK.Value)
 end)
 
-Options.NoFallKeybind:OnClick(function()
+Options.AutoDodgeKeybind:OnClick(function()
     Toggles.ADK:SetValue(not Toggles.ADK.Value)
 end)
