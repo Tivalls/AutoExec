@@ -1961,12 +1961,12 @@ local function checkPlayer(player)
     Library:Notify("Checking: " .. playerName, 3)
     
     if player:IsInGroup(groupId) then
-        Library:Notify(playerName .. " (Moderator) has joined the game!", 5)
+        Library:Notify(playerName .. " (Moderator) has joined the game!", 15)
         playSound("134569069127046")
 
         player.AncestryChanged:Connect(function()
             if not player.Parent then
-                Library:Notify(playerName .. " (Moderator) has left the game!", 5)
+                Library:Notify(playerName .. " (Moderator) has left the game!", 15)
                 playSound("126849058770164")
             end
         end)
@@ -1977,6 +1977,8 @@ for _, player in ipairs(players:GetPlayers()) do
     checkPlayer(player)
 end
 
+
+--Keybinds
 players.PlayerAdded:Connect(checkPlayer)
 
 Options.SpeedHackKeybind:OnClick(function()
