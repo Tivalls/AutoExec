@@ -2,6 +2,10 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
+if Library and Library.Unload then
+    Library:Unload()
+end
+
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 
 local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
@@ -1670,7 +1674,7 @@ RightGroupBox:AddToggle('BMA_Toggle', {
 
 
 
-local LeftGroupBox = Tabs["ESP"]:AddLeftGroupbox('Humanoid')
+local LeftGroupBox = Tabs["ESP"]:AddLeftGroupbox('Player ESP')
 
 LeftGroupBox:AddToggle('Player ESP', {
     Text = 'Players',
@@ -1761,7 +1765,9 @@ toggleESP()
     end
 })
 
-LeftGroupBox:AddToggle('Mob ESP', {
+local LeftGroupbox = Tabs.ESP:AddLeftGroupbox('Mob ESP');
+
+LeftGroupBox:AddToggle('Enable Mob esp', {
     Text = 'Mobs',
     Default = false,
     Callback = function(Value)getgenv().Rainbow = false
@@ -1960,6 +1966,108 @@ end
 
     end
 })
+
+
+local workspace = game:GetService("Workspace")
+local runService = game:GetService("RunService")
+local players = game:GetService("Players")
+local localPlayer = players.LocalPlayer
+
+local espEnabled = false -- Disable ESP by default
+local espColor = Color3.new(1, 1, 1) -- Default ESP color (white)
+
+-- Function to create ESP for a model
+local function createESP(model, label)
+    local rootPart = model:FindFirstChild("RootPart")
+    if not rootPart or model:FindFirstChild("BillboardGui") then
+        return
+    end
+
+    local billboardGui = Instance.new("BillboardGui")
+    billboardGui.Name = "BillboardGui"
+    billboardGui.Adornee = rootPart
+    billboardGui.Size = UDim2.new(0, 200, 0, 50)
+    billboardGui.StudsOffset = Vector3.new(0, 3, 0)
+    billboardGui.AlwaysOnTop = true
+    billboardGui.Enabled = espEnabled
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Name = "TextLabel"
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = espColor
+    textLabel.TextStrokeTransparency = 0
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.TextSize = 14
+    textLabel.Text = label
+    textLabel.Parent = billboardGui
+
+    billboardGui.Parent = model
+
+    runService.RenderStepped:Connect(function()
+        if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local distance = (localPlayer.Character.HumanoidRootPart.Position - rootPart.Position).Magnitude
+            textLabel.Text = string.format("[%s][%.0f]", label, distance)
+        else
+            textLabel.Text = string.format("[%s][N/A]", label)
+        end
+    end)
+end
+
+-- Function to toggle ESP
+local function toggleESP(enabled, parent, label)
+    espEnabled = enabled
+    for _, model in pairs(parent:GetChildren()) do
+        local billboardGui = model:FindFirstChild("BillboardGui")
+        if billboardGui then
+            billboardGui.Enabled = enabled
+        else
+            createESP(model, label)
+        end
+    end
+end
+
+-- Function to update ESP color
+local function updateESPColor(color)
+    espColor = color
+    for _, model in pairs(workspace.Thrown:GetChildren()) do
+        local billboardGui = model:FindFirstChild("BillboardGui")
+        if billboardGui then
+            local textLabel = billboardGui:FindFirstChild("TextLabel")
+            if textLabel then
+                textLabel.TextColor3 = color
+            end
+        end
+    end
+end
+
+-- ESP for Workspace.Thrown
+workspace.Thrown.ChildAdded:Connect(function(model)
+    wait(0.1)
+    createESP(model, "Chest")
+end)
+
+
+local LeftGroupbox = Tabs.ESP:AddLeftGroupbox('Chest ESP');
+-- Linoria toggles
+LeftGroupBox:AddToggle('', {
+    Text = 'Enable Chest ESP',
+    Default = espEnabled,
+    Tooltip = 'Toggle ESP for chests',
+    Callback = function(enabled)
+        toggleESP(enabled, workspace.Thrown, "Chest")
+    end
+})
+
+LeftGroupBox:AddLabel('ESP Color'):AddColorPicker('ESPColorPicker', {
+    Default = espColor, -- Default white
+    Title = 'Select ESP Color',
+    Transparency = nil, -- No transparency
+    Callback = function(color)
+        updateESPColor(color)
+    end
+})
+
 
 
 
