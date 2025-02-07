@@ -555,17 +555,104 @@ Square_Drawing2:Remove()
 
 LeftGroupBox:AddDivider()
 
+-- Function to clone a reference
+local cloneref = cloneref or function(o) return o end
 
+-- Services and references
+local Players = cloneref(game:GetService("Players"))
+local TextChatService = cloneref(game:GetService("TextChatService"))
+local ReplicatedStorage = cloneref(game:GetService("ReplicatedStorage"))
+local LocalPlayer = Players.LocalPlayer
 
+-- Fake user ID for the local player
+local FakeUserId = "Zyg Hub [V3] User"
 
+-- Streamer mode toggle
+local streamerModeEnabled = false
 
-local MyButton = LeftGroupBox:AddButton({
-    Text = 'Streamer Mode',
-    Func = function()game:GetService("Players").LocalPlayer.PlayerGui.WorldInfo.InfoFrame:Destroy()
-    end,
-    DoubleClick = false,
-    Tooltip = 'Removes Server Info'
+-- Function to update player-related objects with fake user ID
+local function UpdatePlayerUserId(Object, Property)
+    if streamerModeEnabled then
+        Object[Property] = Object[Property]:gsub(tostring(LocalPlayer.UserId), tostring(FakeUserId))
+    else
+        Object[Property] = Object[Property]:gsub(tostring(FakeUserId), tostring(LocalPlayer.UserId))
+    end
+end
+
+-- Function to update specific types of objects
+local function NewObject(Object)
+    if Object:IsA("TextLabel") or Object:IsA("TextButton") or Object:IsA("TextBox") then
+        UpdatePlayerUserId(Object, "Text")
+        Object:GetPropertyChangedSignal("Text"):Connect(function()
+            UpdatePlayerUserId(Object, "Text")
+        end)
+    elseif Object:IsA("ImageLabel") or Object:IsA("ImageButton") then
+        UpdatePlayerUserId(Object, "Image")
+        Object:GetPropertyChangedSignal("Image"):Connect(function()
+            UpdatePlayerUserId(Object, "Image")
+        end)
+    end
+end
+
+-- Function to update all objects in the game
+local function UpdateAllObjects()
+    for _, Object in pairs(game:GetDescendants()) do
+        NewObject(Object)
+    end
+end
+
+-- Initial update of all objects
+UpdateAllObjects()
+
+-- Event handler for new objects being added to the game
+game.DescendantAdded:Connect(NewObject)
+
+-- Event handler for new players joining the game
+Players.PlayerAdded:Connect(function(Player)
+    Player.CharacterAdded:Connect(function(Character)
+        -- Wait for the character to load fully
+        Character:WaitForChild("Humanoid")
+
+        -- Update the player's objects
+        for _, Object in pairs(Character:GetDescendants()) do
+            NewObject(Object)
+        end
+    end)
+
+    -- If the player is already in the game, update their objects
+    if Player.Character then
+        for _, Object in pairs(Player.Character:GetDescendants()) do
+            NewObject(Object)
+        end
+    end
+end)
+
+-- Event handler for text chat messages (depending on TextChatService version)
+if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+    TextChatService.MessageReceived:Connect(function(MessageData)
+        NewObject(MessageData)
+    end)
+else
+    ReplicatedStorage.DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(MessageData)
+        NewObject(MessageData)
+    end)
+end
+
+-- Toggle for streamer mode
+LeftGroupBox:AddToggle('StreamerModeToggle', {
+    Text = "Streamer Mode",
+    Default = false,
+    Tooltip = "Enable or disable streamer mode.",
+    Callback = function(NewValue)
+        streamerModeEnabled = NewValue
+        UpdateAllObjects() -- Call this to update all objects with new mode
+    end
 })
+
+
+
+
+
 
 LeftGroupBox:AddSlider('Grapics Slider', {
     Text = 'Graphics settings',
@@ -979,6 +1066,53 @@ LeftGroupBox:AddToggle('No Acid', {
     Callback = function(Value)game:GetService("ReplicatedStorage").Requests.AcidCheck:Destroy()
     end
 })
+
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+
+local noWindConnection
+
+local function noWind(t)
+    if not t then
+        if noWindConnection then
+            noWindConnection:Disconnect()
+            noWindConnection = nil
+        end
+        return
+    end
+
+    if noWindConnection then
+        noWindConnection:Disconnect()
+    end
+
+    noWindConnection = RunService.Heartbeat:Connect(function()
+        local player = Players.LocalPlayer
+        if not player then return end
+
+        local character = player.Character
+        if not character then return end
+
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return end
+
+        local windPusher = rootPart:FindFirstChild('WindPusher')
+        if windPusher then
+            windPusher.Parent = Lighting
+        end
+    end)
+end
+
+-- Linoria UI Toggle Integration
+LeftGroupBox:AddToggle('NoWindToggle', {
+    Text = 'No Wind',
+    Default = false,
+    Tooltip = 'Removes wind push effects',
+    Callback = function(value)
+        noWind(value)
+    end
+})
+
 
 
 local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Farms')
