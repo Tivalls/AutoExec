@@ -1765,7 +1765,7 @@ toggleESP()
     end
 })
 
-local LeftGroupbox = Tabs.ESP:AddLeftGroupbox('Mob ESP');
+
 
 LeftGroupBox:AddToggle('Enable Mob esp', {
     Text = 'Mobs',
@@ -2048,7 +2048,7 @@ workspace.Thrown.ChildAdded:Connect(function(model)
 end)
 
 
-local LeftGroupbox = Tabs.ESP:AddLeftGroupbox('Chest ESP');
+
 -- Linoria toggles
 LeftGroupBox:AddToggle('', {
     Text = 'Enable Chest ESP',
@@ -2057,11 +2057,9 @@ LeftGroupBox:AddToggle('', {
     Callback = function(enabled)
         toggleESP(enabled, workspace.Thrown, "Chest")
     end
-})
-
-LeftGroupBox:AddLabel('ESP Color'):AddColorPicker('ESPColorPicker', {
+}):AddColorPicker('ESPColorPicker', {
     Default = espColor, -- Default white
-    Title = 'Select ESP Color',
+    Title = 'Select Mob ESP Color',
     Transparency = nil, -- No transparency
     Callback = function(color)
         updateESPColor(color)
