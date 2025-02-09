@@ -788,7 +788,16 @@ RightGroupBox:AddToggle('MyToggle', {
     end
 })
 
+local RightGroupBox = Tabs["Main"]:AddRightGroupbox('Visuals')
 
+local MyButton = RightGroupBox:AddButton({
+    Text = 'No location Indicator',
+    Func = function()workspace.LocationIndicator:Destroy()
+
+    end,
+    DoubleClick = false,
+    Tooltip = 'Makes it so the spammy UI on new location doesnt come up'
+})
 
 
 local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Farms')
@@ -821,22 +830,22 @@ end
 LeftGroupBox:AddDivider()
 
 
-local farmingEnabled = false
-local selectedPlayer = nil
-local connection
+    local farmingEnabled = false
+    local selectedPlayer = nil
+    local connection
 
-LeftGroupBox:AddToggle('FarmToggle', {
-    Text = 'LoopKill Player Farm',
-    Default = false,
-    Tooltip = 'Toggle to start/stop farming',
+    LeftGroupBox:AddToggle('FarmToggle', {
+        Text = 'LoopKill Player Farm',
+        Default = false,
+        Tooltip = 'Toggle to start/stop farming',
 
-    Callback = function(Value)
-        farmingEnabled = Value
+        Callback = function(Value)
+            farmingEnabled = Value
 
-        if not farmingEnabled and connection then
-            connection:Disconnect()
-            connection = nil
-        elseif farmingEnabled and selectedPlayer then
+            if not farmingEnabled and connection then
+                connection:Disconnect()
+                connection = nil
+            elseif farmingEnabled and selectedPlayer then
             startFarming(selectedPlayer)
         end
     end
@@ -892,7 +901,25 @@ function startFarming(playerName)
 end
 
 
+local dropdown
 
+local function updateDropdown()
+    local playerList = {}
+    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+        table.insert(playerList, player.Name)
+    end
+
+    if dropdown then
+        dropdown:SetOptions(playerList)
+    end
+end
+
+-- Auto-update the dropdown every 5 seconds
+task.spawn(function()
+    while task.wait(5) do
+        updateDropdown()
+    end
+end)
 
 
 
@@ -957,11 +984,17 @@ local RightGroupBox = Tabs["Misc"]:AddRightGroupbox('Incantations')
 
 local MyButton = RightGroupBox:AddButton({
     Text = 'Incantation Chiyu!',
-    Func = function()
+    Func = function()local args = {
+    [1] = "Incantation: Chiyu!",
+    [2] = "All"
+}
+
+game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+
 
     end,
     DoubleClick = false,
-    Tooltip = 'Copy and paste This incantation'
+    Tooltip = 'Says Incantation Chiyu in chat'
 })
 
 
