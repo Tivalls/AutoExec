@@ -663,6 +663,27 @@ toggleScript()  -- Call this to start or stop the script
 
     end
 })
+
+
+RightGroupBox:AddToggle('Anchor Body/Torso', {
+    Text = 'Anchor Body',
+    Default = false,
+    Callback = function(Value)
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local torso = character:FindFirstChild("Torso")
+
+        if torso then
+            torso.Anchored = Value
+        end
+    end
+}):AddKeyPicker('AnchorKeybind', {
+    Default = 'P',
+    Mode = 'Toggle',
+    Text = 'Anchor Body Keybind',
+    NoUI = false
+})
+
 Toggles.MyToggle:OnChanged(function()
 end)
 Toggles.MyToggle:SetValue(false)
@@ -797,7 +818,79 @@ end
     Tooltip = 'Instantly kills the boss'
 })
 
+LeftGroupBox:AddDivider()
 
+
+local farmingEnabled = false
+local selectedPlayer = nil
+local connection
+
+LeftGroupBox:AddToggle('FarmToggle', {
+    Text = 'Enable Farm',
+    Default = false,
+    Tooltip = 'Toggle to start/stop farming',
+
+    Callback = function(Value)
+        farmingEnabled = Value
+
+        if not farmingEnabled and connection then
+            connection:Disconnect()
+            connection = nil
+        elseif farmingEnabled and selectedPlayer then
+            startFarming(selectedPlayer)
+        end
+    end
+})
+
+LeftGroupBox:AddDropdown('MyPlayerDropdown', { 
+    SpecialType = 'Player',
+    Text = 'Farm Player', 
+    Tooltip = 'Loopkills the selected person', 
+
+    Callback = function(Value)
+        selectedPlayer = Value
+
+        if farmingEnabled then
+            startFarming(selectedPlayer)
+        end
+    end
+})
+
+function startFarming(playerName)
+    if connection then connection:Disconnect() end
+    
+    local args = { [1] = "Holding" }
+    game:GetService("Players").LocalPlayer.Character.SwordHandler.Equip:FireServer(unpack(args))
+
+    local args = { [1] = "True", [2] = 0.15555555621782938 }
+    game:GetService("Players").LocalPlayer.Character.SwordHandler.Equip:FireServer(unpack(args))
+
+    local A = Instance.new('Animation')
+    A.AnimationId = 'rbxassetid://'
+    local P = game:GetService("Players").LocalPlayer
+    local C = P.Character or P.CharacterAdded:Wait()
+    local H = C:WaitForChild('Humanoid'):LoadAnimation(A)
+    H:Play()
+    H:AdjustSpeed(5)
+
+    connection = game:GetService('RunService').Stepped:Connect(function()
+        if not farmingEnabled then
+            connection:Disconnect()
+            connection = nil
+            return
+        end
+
+        local target = game:GetService("Players"):FindFirstChild(playerName)
+        if target and target.Character then
+            C:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(target.Character:WaitForChild("HumanoidRootPart").Position)
+        end
+    end)
+
+    while farmingEnabled do
+        game:GetService("Players").LocalPlayer.Character.SwordHandler.Slice:FireServer()
+        wait(0.01)
+    end
+end
 
 
 
@@ -820,25 +913,95 @@ end
 })
 
 
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Check Widom',
+    Func = function()
+    local player = game:GetService("Players").LocalPlayer
+local wisdomLevel = player:FindFirstChild("WisdomLevel")
 
-RightGroupBox:AddToggle('Anchor Body/Torso', {
-    Text = 'Anchor Body',
-    Default = false,
-    Callback = function(Value)
-        local player = game.Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        local torso = character:FindFirstChild("Torso")
-
-        if torso then
-            torso.Anchored = Value
-        end
-    end
-}):AddKeyPicker('AnchorKeybind', {
-    Default = 'P',
-    Mode = 'Toggle',
-    Text = 'Anchor Body Keybind',
-    NoUI = false
+if wisdomLevel then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "ZYG HUB [V3]",
+        Text = "Your Wisdom Is " .. tostring(wisdomLevel.Value),
+        Icon = "rbxassetid://87338757722975"
+    })
+end
+    end,
+    DoubleClick = false,
+    Tooltip = 'Sends a notification with how much wisdom you have'
 })
+
+
+
+local LeftGroupBox = Tabs["Misc"]:AddLeftGroupbox('Teleports')
+
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Minotaur Boss',
+    Func = function()
+    --TP To minotaur dungeon
+local args = {
+    [1] = 18860273602
+}
+
+game:GetService("ReplicatedStorage").RaidTele:FireServer(unpack(args))
+
+
+    end,
+    DoubleClick = false,
+    Tooltip = 'Tps You to the minotaur boss'
+})
+
+
+
+
+local RightGroupBox = Tabs["Misc"]:AddRightGroupbox('Incantations')
+
+local MyButton = RightGroupBox:AddButton({
+    Text = 'Incantation Chiyu!',
+    Func = function()
+
+    end,
+    DoubleClick = false,
+    Tooltip = 'Copy and paste This incantation'
+})
+
+
+local RightGroupBox = Tabs["Misc"]:AddRightGroupbox('Team')
+
+RightGroupBox:AddDropdown('MyPlayerDropdown', {
+    SpecialType = 'Player',
+    Text = 'Invite Player',
+    Tooltip = 'Invites the player that is selected',
+
+    Callback = function(Value)
+        local args = {
+            [1] = game:GetService("Players")[Value]
+        }
+
+        game:GetService("ReplicatedStorage").InvitePlayer:FireServer(unpack(args))
+    end
+})
+
+
+
+local MyButton = RightGroupBox:AddButton({
+    Text = 'Create Team',
+    Func = function()game:GetService("ReplicatedStorage").CreateTeam:FireServer()
+
+    end,
+    DoubleClick = false,
+    Tooltip = 'Creates a team for you'
+})
+
+local MyButton = RightGroupBox:AddButton({
+    Text = 'Leave Team',
+    Func = function()game:GetService("ReplicatedStorage").LeaveTeam:FireServer()
+
+    end,
+    DoubleClick = false,
+    Tooltip = 'Disbands your team'
+})
+
 
 
 
