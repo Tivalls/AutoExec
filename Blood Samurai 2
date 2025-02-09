@@ -826,7 +826,7 @@ local selectedPlayer = nil
 local connection
 
 LeftGroupBox:AddToggle('FarmToggle', {
-    Text = 'Enable Farm',
+    Text = 'LoopKill Player Farm',
     Default = false,
     Tooltip = 'Toggle to start/stop farming',
 
@@ -844,7 +844,6 @@ LeftGroupBox:AddToggle('FarmToggle', {
 
 LeftGroupBox:AddDropdown('MyPlayerDropdown', { 
     SpecialType = 'Player',
-    Text = 'Farm Player', 
     Tooltip = 'Loopkills the selected person', 
 
     Callback = function(Value)
