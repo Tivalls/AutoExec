@@ -214,7 +214,7 @@ LeftGroupBox:AddSlider('SpeedValue', {
 
 -- Initialize global variables
 _G.ScriptEnabled = false
-_G.HackedJumpPower = 50
+_G.HackedJumpPower = 35
 
 -- Toggle Callback
 LeftGroupBox:AddToggle('JumpPowerToggle', {
