@@ -802,6 +802,21 @@ local MyButton = RightGroupBox:AddButton({
 
 local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Farms')
 
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Give Infinite Money',
+    Func = function()local args = {
+    [1] = "9.99e+101",
+    [2] = 1000000,
+    [3] = false
+}
+ 
+game:GetService("ReplicatedStorage"):WaitForChild("BankCheck"):FireServer(unpack(args))
+
+    end,
+    DoubleClick = false,
+    Tooltip = 'Gives you infinite money in bank and thingy'
+})
+
 
 local MyButton = LeftGroupBox:AddButton({
     Text = 'Insta Kill Boss',
