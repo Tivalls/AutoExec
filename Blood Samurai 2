@@ -992,7 +992,21 @@ game:GetService("ReplicatedStorage").RaidTele:FireServer(unpack(args))
     Tooltip = 'Tps You to the minotaur boss'
 })
 
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Flame Boss',
+    Func = function()
+    --TP To minotaur dungeon
+local args = {
+    [1] = 18863569535
+}
 
+game:GetService("ReplicatedStorage").RaidTele:FireServer(unpack(args))
+
+
+    end,
+    DoubleClick = false,
+    Tooltip = 'Tps You to the Flame boss'
+})
 
 
 local RightGroupBox = Tabs["Misc"]:AddRightGroupbox('Incantations')
