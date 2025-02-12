@@ -71,6 +71,12 @@ local gameScripts = {
 
 
 
+    [18860273602] = function() -- Replace with your game's PlaceId --BS2
+        print("Running Script for Blood Samurai 2")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202"))()
+        -- Script logic for Game 3
+    end,
+    
     [15523167319] = function() -- Replace with your game's PlaceId --BS2
         print("Running Script for Blood Samurai 2")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202"))()
@@ -88,7 +94,6 @@ local gameScripts = {
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202"))()
         -- Script logic for Game 3
     end,
-
 
 
 
