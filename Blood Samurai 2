@@ -30,109 +30,6 @@ local Tabs = {
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
---Spectating Script
-local Players = game:GetService("Players")
-local CollectionService = game:GetService("CollectionService")
-local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
-local workspace = game:GetService("Workspace")
-
-local playerSpectating = nil
-local playerSpectatingLabel = nil
-local lastUpdateAt = 0
-local spectateUpdateConn = nil
-
--- Function to set the camera subject
-local function setCameraSubject(subject)
-    if subject == LocalPlayer.Character then
-        playerSpectating = nil
-        CollectionService:RemoveTag(LocalPlayer, 'ForcedSubject')
-
-        if playerSpectatingLabel then
-            playerSpectatingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            playerSpectatingLabel = nil
-        end
-
-        -- Disconnect the spectate update connection if it exists
-        if spectateUpdateConn then
-            spectateUpdateConn:Disconnect()
-            spectateUpdateConn = nil
-        end
-
-        -- Reset camera subject to LocalPlayer
-        workspace.CurrentCamera.CameraSubject = LocalPlayer.Character
-        return
-    end
-
-    CollectionService:AddTag(LocalPlayer, 'ForcedSubject')
-    workspace.CurrentCamera.CameraSubject = subject
-
-    -- Spawn a new update loop for spectating
-    spectateUpdateConn = task.spawn(function()
-        while true do
-            task.wait(1)  -- Adjust update rate as needed
-            if tick() - lastUpdateAt < 5 then
-                continue
-            end
-            lastUpdateAt = tick()
-
-            -- Perform operations when spectating, such as streaming around the camera
-            task.spawn(function()
-                LocalPlayer:RequestStreamAroundAsync(workspace.CurrentCamera.CFrame.Position)
-            end)
-        end
-    end)
-end
-
--- Connect user input event for spectating
-UserInputService.InputBegan:Connect(function(inputObject)
-    -- Ensure left mouse click and relevant UI elements are present
-    if inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 or not LocalPlayer:FindFirstChild('PlayerGui') or not LocalPlayer.PlayerGui:FindFirstChild('LeaderboardGui') then
-        return
-    end
-
-    local newPlayerSpectating
-    local newPlayerSpectatingLabel
-
-    -- Find the player to spectate in the leaderboard GUI
-    for _, v in ipairs(LocalPlayer.PlayerGui.LeaderboardGui.MainFrame.ScrollingFrame:GetChildren()) do
-        if v:IsA('Frame') and v:FindFirstChild('Player') and v.Player.TextTransparency ~= 0 then
-            newPlayerSpectating = v.Player.Text
-            newPlayerSpectatingLabel = v.Player
-            break
-        end
-    end
-
-    if not newPlayerSpectating then
-        return
-    end
-
-    -- Update spectating label color
-    if playerSpectatingLabel then
-        playerSpectatingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end
-
-    playerSpectatingLabel = newPlayerSpectatingLabel
-    playerSpectatingLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-
-    -- Set camera subject based on the player being spectated
-    if newPlayerSpectating == playerSpectating or newPlayerSpectating == LocalPlayer.Name then
-        setCameraSubject(LocalPlayer.Character)
-    else
-        playerSpectating = newPlayerSpectating
-
-        -- Find the player to spectate and set camera subject accordingly
-        local player = Players:FindFirstChild(playerSpectating)
-
-        if not player or not player.Character or not player.Character.PrimaryPart then
-            setCameraSubject(LocalPlayer.Character)
-            return
-        end
-
-        setCameraSubject(player.Character)
-    end
-end)
-
 
 
 local LeftGroupBox: any = Tabs["Main"]:AddLeftGroupbox('Main Scripts')
@@ -311,7 +208,6 @@ end)
 local Player = game:GetService'Players'.LocalPlayer
 local UIS = game:GetService'UserInputService'
 
-_G.JumpHeight = 100
 local InfiniteJumpEnabled = false
 
 function Action(Object, Function) if Object ~= nil then Function(Object); end end
@@ -321,7 +217,7 @@ UIS.InputBegan:Connect(function(UserInput)
         Action(Player.Character and Player.Character:FindFirstChild("Humanoid"), function(self)
             if self:GetState() == Enum.HumanoidStateType.Jumping or self:GetState() == Enum.HumanoidStateType.Freefall then
                 Action(self.Parent:FindFirstChild("HumanoidRootPart"), function(self)
-                    self.Velocity = Vector3.new(0, _G.JumpHeight, 0)
+                    self.Velocity = Vector3.new(0, _G.HackedJumpPower, 0)
                 end)
             end
         end)
@@ -341,6 +237,7 @@ LeftGroupBox:AddToggle('Inf Jump', {
     Text = 'Infinite Jump Keybind',
     NoUI = false
 })
+
 
 
 
