@@ -799,6 +799,49 @@ local MyButton = RightGroupBox:AddButton({
     Tooltip = 'Makes it so the spammy UI on new location doesnt come up'
 })
 
+local MyButton = RightGroupBox:AddButton({
+    Text = 'Give Title Above Head',
+    Func = function()local args = {
+    [1] = "toggletitle.1",
+    [2] = "All"
+}
+
+game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+
+
+    end,
+    DoubleClick = false,
+    Tooltip = 'Gives you a title'
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+RightGroupBox:AddInput('MyTextbox', {
+    Default = '',
+    Numeric = false,
+    Finished = false,
+
+    Text = 'Change Title',
+    Tooltip = 'Changes what the title above your head says.',
+    Placeholder = 'No Title',
+
+    Callback = function(Value)
+        local character = LocalPlayer.Character
+        if character then
+            local title = character:FindFirstChild("Head")
+                and character.Head:FindFirstChild("Overhead")
+                and character.Head.Overhead:FindFirstChild("Title")
+
+            if title and title:IsA("TextLabel") then
+                title.Text = Value
+            end
+        end
+    end
+})
+
+
+
 
 local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Farms')
 
@@ -866,6 +909,8 @@ LeftGroupBox:AddDivider()
     end
 })
 
+local Players = game:GetService("Players")
+
 LeftGroupBox:AddDropdown('MyPlayerDropdown', { 
     SpecialType = 'Player',
     Tooltip = 'Loopkills the selected person', 
@@ -878,6 +923,24 @@ LeftGroupBox:AddDropdown('MyPlayerDropdown', {
         end
     end
 })
+
+local function UpdateDropdown()
+    local playerNames = {}
+
+    for _, player in pairs(Players:GetPlayers()) do
+        table.insert(playerNames, player.Name)
+    end
+
+    Options.MyPlayerDropdown:SetOptions(playerNames)
+end
+
+-- Update dropdown every second
+task.spawn(function()
+    while true do
+        UpdateDropdown()
+        task.wait(1)
+    end
+end)
 
 function startFarming(playerName)
     if connection then connection:Disconnect() end
@@ -915,26 +978,6 @@ function startFarming(playerName)
     end
 end
 
-
-local dropdown
-
-local function updateDropdown()
-    local playerList = {}
-    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-        table.insert(playerList, player.Name)
-    end
-
-    if dropdown then
-        dropdown:SetOptions(playerList)
-    end
-end
-
--- Auto-update the dropdown every 5 seconds
-task.spawn(function()
-    while task.wait(5) do
-        updateDropdown()
-    end
-end)
 
 
 
