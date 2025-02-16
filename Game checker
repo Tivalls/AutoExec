@@ -1,4 +1,4 @@
-https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Chat%20log%20Software?token=GHSAT0AAAAAAC4S7QKZQJUDYTZGBQHR2QSSZ5RUKZA
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Chat%20log%20Software?token=GHSAT0AAAAAAC4S7QKZQJUDYTZGBQHR2QSSZ5RUKZA"))()
 
 -- Game PlaceId to Script Map
 local gameScripts = {
