@@ -1,0 +1,244 @@
+if Library and Library.Unload then
+    Library:Unload()
+end
+
+local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+
+local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
+local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+
+local Window = Library:CreateWindow({
+
+    Title = 'Auto Parry Test',
+    Center = true,
+    AutoShow = true,
+    TabPadding = 8,
+    MenuFadeTime = 0.2
+})
+
+local Tabs = {
+    -- Creates a new tab titled Main
+    Main = Window:AddTab('Main'),
+    ['UI Settings'] = Window:AddTab('UI Settings'),
+}
+
+-- Groupbox and Tabbox inherit the same functions
+-- except Tabboxes you have to call the functions on a tab (Tabbox:AddTab(name))
+local LeftGroupBox = Tabs.Main:AddLeftGroupbox('Groupbox')
+
+-- Get required services
+local UserInputService = cloneref(game:GetService("UserInputService"))
+local RunService = cloneref(game:GetService("RunService"))
+local Players = cloneref(game:GetService("Players"))
+local LocalPlayer = Players.LocalPlayer
+
+-- Virtual input for safe key pressing
+local VirtualInput = cloneref(game:GetService("VirtualInputManager"))
+
+-- Entity storage
+local EntityFolder = cloneref(workspace:WaitForChild("Alive"))
+
+
+-- Toggles
+local AutoParryEnabled = false
+local AutoDodgeEnabled = false
+
+-- Cooldowns
+local LastParryTime = 0
+local LastDodgeTime = 0
+local DodgeCooldown = 1
+
+-- Parry Delay (adjustable via UI)
+local ParryDelay = 0.1 -- Default delay
+
+-- Prevents duplicate notifications
+local ConflictNotified = false
+
+-- Function to handle conflicts
+local function CheckConflict()
+    if AutoParryEnabled and AutoDodgeEnabled then
+        if not ConflictNotified then
+            Library:Notify("[Warning] Both AutoParry and AutoDodge are enabled! This may cause conflicts.")
+            ConflictNotified = true
+        end
+    else
+        ConflictNotified = false -- Reset when the conflict is resolved
+    end
+end
+
+-- Function to parry
+local function PerformParry()
+    task.wait(ParryDelay) -- Use adjustable delay
+
+    VirtualInput:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
+    wait(0.001)
+    VirtualInput:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
+
+    LastParryTime = tick()
+end
+
+-- Function to dodge
+local function PerformDodge()
+    task.wait(0.1) -- Fixed dodge reaction time
+
+    VirtualInput:SendKeyEvent(true, Enum.KeyCode.Q, false, nil)
+
+    LastDodgeTime = tick()
+end
+
+-- Feint detection
+local function HandleFeint(Humanoid)
+    for _, Track in pairs(Humanoid:GetPlayingAnimationTracks()) do
+        if Track.Name:lower():find("feint") then
+            if AutoDodgeEnabled then
+                PerformDodge()
+            end
+            return true
+        end
+    end
+    return false
+end
+
+-- AutoParry & Dodge logic
+local function AutoParryAndDodge()
+    CheckConflict()
+
+    local Character = LocalPlayer.Character
+    if not Character then return end
+
+    for _, Entity in pairs(EntityFolder:GetChildren()) do
+        if Entity ~= Character and Entity:FindFirstChild("HumanoidRootPart") then
+            local Distance = (Entity.HumanoidRootPart.Position - Character.HumanoidRootPart.Position).Magnitude
+            local EnemyHumanoid = Entity:FindFirstChildOfClass("Humanoid")
+
+            if EnemyHumanoid and Distance < 10 then
+                if HandleFeint(EnemyHumanoid) then return end
+
+                if AutoParryEnabled and tick() - LastParryTime >= ParryDelay then
+                    PerformParry()
+                elseif AutoDodgeEnabled and tick() - LastDodgeTime >= DodgeCooldown then
+                    PerformDodge()
+                end
+            end
+        end
+    end
+end
+
+-- UI Toggles
+LeftGroupBox:AddToggle("AutoParryToggle", {
+    Text = "Auto Parry",
+    Default = false,
+    Tooltip = "Enable or disable auto parry",
+    Callback = function(Value)
+        AutoParryEnabled = Value
+        CheckConflict()
+    end
+})
+
+LeftGroupBox:AddToggle("AutoDodgeToggle", {
+    Text = "Auto Dodge",
+    Default = false,
+    Tooltip = "Enable or disable auto dodge",
+    Callback = function(Value)
+        AutoDodgeEnabled = Value
+        CheckConflict()
+    end
+})
+
+-- Parry Delay Slider
+LeftGroupBox:AddSlider("ParryDelaySlider", {
+    Text = "Parry Delay",
+    Default = 1,
+    Min = 0,
+    Max = 3,
+    Rounding = 0,
+    Suffix = "s",
+    Callback = function(Value)
+        ParryDelay = Value
+    end
+})
+
+-- Connect function to RunService
+RunService.RenderStepped:Connect(AutoParryAndDodge)
+
+
+
+
+
+
+
+
+-- Library functions
+-- Sets the watermark visibility
+Library:SetWatermarkVisibility(true)
+
+-- Example of dynamically-updating watermark with common traits (fps and ping)
+local FrameTimer = tick()
+local FrameCounter = 0;
+local FPS = 60;
+
+local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(function()
+    FrameCounter += 1;
+
+    if (tick() - FrameTimer) >= 1 then
+        FPS = FrameCounter;
+        FrameTimer = tick();
+        FrameCounter = 0;
+    end;
+
+    Library:SetWatermark(('LinoriaLib demo | %s fps | %s ms'):format(
+        math.floor(FPS),
+        math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
+    ));
+end);
+
+Library.KeybindFrame.Visible = true; -- todo: add a function for this
+
+Library:OnUnload(function()
+    WatermarkConnection:Disconnect()
+
+    Library.Unloaded = true
+end)
+
+-- UI Settings
+local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+
+-- I set NoUI so it does not show up in the keybinds menu
+MenuGroup:AddButton('Unload', function() Library:Unload() end)
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'LeftAlt', NoUI = true, Text = 'Menu keybind' })
+
+Library.ToggleKeybind = Options.MenuKeybind -- Allows you to have a custom keybind for the menu
+
+-- Addons:
+-- SaveManager (Allows you to have a configuration system)
+-- ThemeManager (Allows you to have a menu theme system)
+
+-- Hand the library over to our managers
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+-- Ignore keys that are used by ThemeManager.
+-- (we dont want configs to save themes, do we?)
+SaveManager:IgnoreThemeSettings()
+
+-- Adds our MenuKeybind to the ignore list
+-- (do you want each config to have a different menu key? probably not.)
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+
+-- use case for doing it this way:
+-- a script hub could have themes in a global folder
+-- and game configs in a separate folder per game
+ThemeManager:SetFolder('MyScriptHub')
+SaveManager:SetFolder('MyScriptHub/specific-game')
+
+-- Builds our config menu on the right side of our tab
+SaveManager:BuildConfigSection(Tabs['UI Settings'])
+
+-- Builds our theme menu (with plenty of built in themes) on the left side
+-- NOTE: you can also call ThemeManager:ApplyToGroupbox to add it to a specific groupbox
+ThemeManager:ApplyToTab(Tabs['UI Settings'])
+
+-- You can use the SaveManager:LoadAutoloadConfig() to load a config
+-- which has been marked to be one that auto loads!
+SaveManager:LoadAutoloadConfig()
