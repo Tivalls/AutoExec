@@ -693,60 +693,6 @@ RightGroupBox:AddToggle('MyToggle', {
     end
 })
 
-local RightGroupBox = Tabs["Main"]:AddRightGroupbox('Visuals')
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'No location Indicator',
-    Func = function()workspace.LocationIndicator:Destroy()
-
-    end,
-    DoubleClick = false,
-    Tooltip = 'Makes it so the spammy UI on new location doesnt come up'
-})
-
-local MyButton = RightGroupBox:AddButton({
-    Text = 'Give Title Above Head',
-    Func = function()local args = {
-    [1] = "toggletitle.1",
-    [2] = "All"
-}
-
-game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
-
-
-    end,
-    DoubleClick = false,
-    Tooltip = 'Gives you a title'
-})
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-RightGroupBox:AddInput('MyTextbox', {
-    Default = '',
-    Numeric = false,
-    Finished = false,
-
-    Text = 'Change Title',
-    Tooltip = 'Changes what the title above your head says.',
-    Placeholder = 'No Title',
-
-    Callback = function(Value)
-        local character = LocalPlayer.Character
-        if character then
-            local title = character:FindFirstChild("Head")
-                and character.Head:FindFirstChild("Overhead")
-                and character.Head.Overhead:FindFirstChild("Title")
-
-            if title and title:IsA("TextLabel") then
-                title.Text = Value
-            end
-        end
-    end
-})
-
-
-
 
 local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Farms')
 
