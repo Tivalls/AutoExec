@@ -301,8 +301,27 @@ end)
 
 
 local MyButton = LeftGroupBox:AddButton({
-    Text = 'Get GameID',
-    Func = function()print(game.PlaceId)
+    Text = 'Copy GameID',
+    Func = function()
+
+local HttpService = game:GetService("HttpService")
+local placeId = game.PlaceId
+
+-- Print Place ID to the Developer Console
+print("Place ID: " .. placeId)
+
+-- Function to copy to clipboard (Roblox does not have a built-in clipboard API, so this is a workaround for Studio)
+local function copyToClipboard(text)
+    if setclipboard then
+        setclipboard(text) -- Copies to clipboard (only works with exploits in live games, but works in Studio with certain permissions)
+        print("Place ID copied to clipboard!")
+    else
+        warn("Clipboard copying is not supported in this environment.")
+    end
+end
+
+-- Copy the Place ID to clipboard
+copyToClipboard(tostring(placeId))
     end,
     DoubleClick = false,
     Tooltip = 'Gets the Location ID'
