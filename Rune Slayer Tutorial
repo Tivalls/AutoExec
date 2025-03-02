@@ -1,0 +1,1641 @@
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+if Library and Library.Unload then
+    Library:Unload()
+end
+
+local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+
+local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
+local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+
+local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
+
+local Window = Library:CreateWindow({
+    Title = 'Zyg Hub [V3] {' .. hwid .. '}',
+    Center = true,
+    AutoShow = true,
+    TabPadding = 8,
+    MenuFadeTime = 0.2
+})
+
+
+local Tabs = {
+    Main = Window:AddTab('Main'),
+    ['ESP'] = Window:AddTab('ESP'),
+    ['Auto Parry'] = Window:AddTab('Auto Parry'),
+    ['Tutorial'] = Window:AddTab('Tutorial'),
+    ['UI Settings'] = Window:AddTab('UI Settings')
+}
+
+
+-- Groupbox and Tabbox inherit the same functions
+-- except Tabboxes you have to call the functions on a tab (Tabbox:AddTab(name))
+local LeftGroupBox = Tabs.Main:AddLeftGroupbox('Main Scripts')
+
+
+
+-- Variables
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local isWalking = false
+local walkSpeed = 16 -- Default speed
+
+-- Function to start movement
+local function StartWalking()
+    isWalking = true
+end
+
+-- Function to stop movement
+local function StopWalking()
+    isWalking = false
+end
+
+-- Toggle integration
+LeftGroupBox:AddToggle('WalkToggle', {
+    Text = 'Walkspeed',
+    Default = false,
+    Tooltip = 'Toggle Walkspeed on off',
+    Callback = function(Value)
+        if Value then
+            StartWalking()
+        else
+            StopWalking()
+        end
+    end
+}):AddKeyPicker('SpeedHackKeybind', {
+    Default = '',
+    Mode = 'Toggle',
+    Text = 'Walkspeed Keybind',
+    NoUI = false
+})
+
+-- Slider integration for speed
+LeftGroupBox:AddSlider('WalkSpeedSlider', {
+    Text = 'Power',
+    Default = 16,
+    Min = 0,
+    Max = 100,
+    Rounding = 0,
+    Compact = true,
+    Callback = function(Value)
+        walkSpeed = Value
+    end
+})
+
+-- Function to check for obstacles
+local function CanMove(newPosition)
+    local rayOrigin = RootPart.Position
+    local direction = (newPosition - rayOrigin).Unit * 2 -- Small buffer distance
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {Character} -- Ignore the player
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+    local rayResult = workspace:Raycast(rayOrigin, direction, raycastParams)
+    return not rayResult -- If nothing is hit, movement is allowed
+end
+
+-- Movement logic with collision detection
+RunService.RenderStepped:Connect(function()
+    if isWalking then
+        local direction = Vector3.zero
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            direction = direction + RootPart.CFrame.LookVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            direction = direction - RootPart.CFrame.LookVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            direction = direction - RootPart.CFrame.RightVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            direction = direction + RootPart.CFrame.RightVector
+        end
+
+        if direction.Magnitude > 0 then
+            local newPosition = RootPart.Position + (direction.Unit * walkSpeed * 0.03)
+
+            if CanMove(newPosition) then
+                RootPart.CFrame = CFrame.new(newPosition, newPosition + RootPart.CFrame.LookVector)
+            end
+        end
+    end
+end)
+
+-- Initialize global variables
+_G.ScriptEnabled = false
+_G.HackedJumpPower = 50
+
+-- Toggle Callback
+LeftGroupBox:AddToggle('JumpPowerToggle', {
+    Text = 'Jump Power',
+    Default = false,
+    Tooltip = 'Enables custom jump power',
+    Callback = function(Value)
+        _G.ScriptEnabled = Value
+    end
+}):AddKeyPicker('JumpPowerKeybind', {
+    Default = '',
+    Mode = 'Toggle',
+    Text = 'Jump Power Keybind',
+    NoUI = false
+})
+
+-- Slider Callback
+LeftGroupBox:AddSlider('JumpPowerValue', {
+    Text = 'Power',
+    Default = 50,
+    Min = 0,
+    Max = 275,
+    Rounding = 0,
+    Compact = true,
+    Callback = function(Value)
+        _G.HackedJumpPower = Value
+    end
+})
+
+-- Core script
+local Plrs = game:GetService("Players")
+local MyPlr = Plrs.LocalPlayer
+
+local function applyJumpPower(Humanoid)
+    if _G.ScriptEnabled then
+        Humanoid.JumpPower = _G.HackedJumpPower
+    end
+end
+
+local function onCharacterAdded(Char)
+    repeat wait() until Char:FindFirstChild("Humanoid")
+    local Hum = Char:WaitForChild("Humanoid")
+    Hum.Changed:Connect(function()
+        applyJumpPower(Hum)
+    end)
+    applyJumpPower(Hum)
+end
+
+if MyPlr.Character then
+    onCharacterAdded(MyPlr.Character)
+end
+
+MyPlr.CharacterAdded:Connect(onCharacterAdded)
+
+LeftGroupBox:AddDivider()
+
+local UIS = game:GetService('UserInputService')
+local RunService = game:GetService('RunService')
+
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local Camera = workspace.CurrentCamera
+
+local Fly = false
+local FlySpeed = 16
+local HoverHeight = 10 -- Adjust this if you want to float higher
+
+local Controls = {
+    ['w'] = 0,
+    ['a'] = 0,
+    ['s'] = 0,
+    ['d'] = 0,
+    ['space'] = 0, 
+    ['rightcontrol'] = 0 
+}
+
+LeftGroupBox:AddToggle('FlyToggle', {
+    Text = 'Fly',
+    Default = false,
+    Tooltip = 'Toggle Fly on and Off',
+    Callback = function(Value)
+        Fly = Value
+        if not Fly then
+            Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+        end
+    end
+}):AddKeyPicker('FlyKeybind', {
+    Default = '',
+    Mode = 'Toggle',
+    Text = 'Fly Keybind',
+    NoUI = false
+})
+
+LeftGroupBox:AddSlider('FlySpeedSlider', {
+    Text = 'Fly Speed',
+    Default = 16,
+    Min = 0,
+    Max = 325,
+    Rounding = 0,
+    Compact = true,
+    Callback = function(Value)
+        FlySpeed = Value
+    end
+})
+
+RunService.RenderStepped:Connect(function()
+    if Fly then
+        local MoveDirection = (
+            (Camera.CFrame.LookVector * (Controls['w'] - Controls['s'])) +
+            (Camera.CFrame.RightVector * (Controls['d'] - Controls['a']))
+        ).Unit * FlySpeed
+
+        local VerticalVelocity = Vector3.new(0, 15 + Controls['space'] * FlySpeed - Controls['rightcontrol'] * FlySpeed, 0)
+        
+        -- Keep the player in the air
+        Character.HumanoidRootPart.AssemblyLinearVelocity = MoveDirection + VerticalVelocity
+    end
+end)
+
+UIS.InputBegan:Connect(function(input, isProcessed)
+    if not isProcessed then
+        local keyName = input.KeyCode.Name:lower()
+        if Controls[keyName] ~= nil then
+            Controls[keyName] = 1
+        end
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    local keyName = input.KeyCode.Name:lower()
+    if Controls[keyName] ~= nil then
+        Controls[keyName] = 0
+    end
+end)
+
+LeftGroupBox:AddDivider()
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+
+local noclip = false
+
+-- No Clip Toggle
+LeftGroupBox:AddToggle('NoClipToggle', {
+    Text = 'No Clip',
+    Default = false,
+    Tooltip = 'Allows you to clip through walls',
+    Callback = function(Value)
+        noclip = Value
+    end
+}):AddKeyPicker('NoClipKeybind', {
+    Default = '',
+    Mode = 'Toggle',
+    Text = 'No Clip Keybind',
+    NoUI = false
+})
+
+-- No Clip Functionality
+RunService.Stepped:Connect(function()
+    if noclip then
+        for _, v in pairs(char:GetChildren()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+
+local oldNamecall = mt.__namecall
+local NoFallEnabled = false
+
+LeftGroupBox:AddToggle('NoFallToggle', {
+    Text = 'No Fall',
+    Default = false,
+    Tooltip = 'Allows you to not take fall damage',
+    Callback = function(Value)
+        NoFallEnabled = Value
+    end
+}):AddKeyPicker('NoFallKeybind', {
+    Default = '',
+    Mode = 'Toggle',
+    Text = 'No Fall Damage Keybind',
+    NoUI = false
+})
+
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if NoFallEnabled and method == "FireServer" and typeof(self) == "Instance" and self.Name == "MasterEvent" then
+        if typeof(args[1]) == "table" and args[1].Config == "FallDamage" then
+            return -- Block the fall damage event when NoFall is enabled
+        end
+    end
+
+    return oldNamecall(self, ...)
+end)
+
+setreadonly(mt, true)
+
+
+
+LeftGroupBox:AddToggle('Inf Jump', {
+    Text = 'Infinite Jump',
+    Default = false,
+    Tooltip = 'Allows you to jump infinitely',
+    Callback = function(Value)
+        InfiniteJumpEnabled = Value
+    end
+}):AddKeyPicker('InfJumpKeybind', {
+    Default = '',
+    Mode = 'Toggle',
+    Text = 'Infinite Jump Keybind',
+    NoUI = false
+})
+
+
+
+
+LeftGroupBox:AddToggle('ChatLogger', {
+    Text = 'Chat Logger',
+    Default = false,
+    Tooltip = 'Shows you chat history',
+
+    Callback = function(Value)local lines = {}
+local Text_Drawing = Drawing.new("Text")
+local Square_Drawing = Drawing.new("Square")
+local Square2_Drawing = Drawing.new("Square")
+local UpdateSignal = Instance.new("BindableEvent")
+
+local function IsStringEmpty(String)
+	if type(String) == 'string' then
+		return String:match'^%s+$' ~= nil or #String == 0 or String == '' or false;
+	end
+	
+	return false;
+end
+
+function chatbind(player)
+    player.Chatted:Connect(function(msg)
+	    local firstname = player:GetAttribute('FirstName') or ""
+    	local lastname = player:GetAttribute('LastName') or ""
+        lines[#lines+1] = string.format("%s %s (%s):%s", firstname, lastname, player.Name, msg)
+        UpdateSignal:Fire()
+        if #lines >= 17 then
+            shift(lines)
+        end
+    end)
+end
+function shift(tb)
+    for i=1, #tb do
+        tb[i-1] = tb[i]
+    end
+    tb[#tb] = nil
+end
+for _, player in pairs(game:GetService("Players"):GetPlayers())do
+    chatbind(player)
+end
+game:GetService("Players").PlayerAdded:Connect(chatbind)
+_G.Chat_log = not _G.Chat_log
+local last_updatefire = tick()
+game:GetService("RunService").Stepped:Connect(function()
+    if (tick() - last_updatefire) > 1/10 then
+        last_updatefire = tick()
+        UpdateSignal:Fire()
+    end
+end)
+while _G.Chat_log do
+    local Buffer = lines[1] or ""
+    local VPSize = Workspace.CurrentCamera.ViewportSize
+    for i=2,#lines do
+        Buffer = Buffer .. "\n"..lines[i]
+    end
+    Square_Drawing.Size = Vector2.new(500,300)
+    Square2_Drawing.Size = Square_Drawing.Size + Vector2.new(10,10)
+    
+    Square_Drawing.Position = Vector2.new(VPSize.X - Square_Drawing.Size.X-25, VPSize.Y - Square_Drawing.Size.Y-25)
+    Square2_Drawing.Position = Square_Drawing.Position-Vector2.new(5,5)
+    
+    Square2_Drawing.Transparency = 0.5
+    Square2_Drawing.Visible = true
+    Square2_Drawing.Filled = true
+    Square2_Drawing.Color = Color3.new(1,1,1)
+    Square2_Drawing.ZIndex = Square_Drawing.ZIndex - 1
+    
+    Square_Drawing.Transparency = 0.25
+    Square_Drawing.Visible = true
+    Square_Drawing.Filled = true
+    Square_Drawing.Color = Color3.new(1,1,1)
+    Square_Drawing.ZIndex = Text_Drawing.ZIndex - 1
+    
+    Text_Drawing.Position = Square_Drawing.Position
+    Text_Drawing.Size = 18
+    Text_Drawing.Text = Buffer
+    Text_Drawing.Outline = false
+    Text_Drawing.Color = Color3.new(0,0,0)
+    Text_Drawing.OutlineColor = Color3.new(0,0,0)
+    Text_Drawing.Transparency = 1
+    Text_Drawing.Visible = true
+
+    UpdateSignal.Event:wait()
+end
+Text_Drawing.Transparency = 0
+Text_Drawing.Visible = false
+Square_Drawing.Transparency = 0
+Square_Drawing.Visible = false
+Square2_Drawing.Transparency = 0
+Square2_Drawing.Visible = false
+
+Text_Drawing:Remove()
+Square_Drawing:Remove()
+Square_Drawing2:Remove()
+
+    end
+})
+
+
+
+
+
+
+local LeftGroupBox = Tabs["Main"]:AddLeftGroupbox('Visuals')
+
+LeftGroupBox:AddToggle('FullBright', {
+    Text = 'Fullbright',
+    Default = false,
+    Callback = function(Value)if not _G.FullBrightExecuted then
+ 
+    _G.FullBrightEnabled = false
+ 
+    _G.NormalLightingSettings = {
+        Brightness = game:GetService("Lighting").Brightness,
+        ClockTime = game:GetService("Lighting").ClockTime,
+        FogEnd = game:GetService("Lighting").FogEnd,
+        GlobalShadows = game:GetService("Lighting").GlobalShadows,
+        Ambient = game:GetService("Lighting").Ambient
+    }
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("Brightness"):Connect(function()
+        if game:GetService("Lighting").Brightness ~= 1 and game:GetService("Lighting").Brightness ~= _G.NormalLightingSettings.Brightness then
+            _G.NormalLightingSettings.Brightness = game:GetService("Lighting").Brightness
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").Brightness = 1
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("ClockTime"):Connect(function()
+        if game:GetService("Lighting").ClockTime ~= 12 and game:GetService("Lighting").ClockTime ~= _G.NormalLightingSettings.ClockTime then
+            _G.NormalLightingSettings.ClockTime = game:GetService("Lighting").ClockTime
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").ClockTime = 12
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("FogEnd"):Connect(function()
+        if game:GetService("Lighting").FogEnd ~= 786543 and game:GetService("Lighting").FogEnd ~= _G.NormalLightingSettings.FogEnd then
+            _G.NormalLightingSettings.FogEnd = game:GetService("Lighting").FogEnd
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").FogEnd = 786543
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("GlobalShadows"):Connect(function()
+        if game:GetService("Lighting").GlobalShadows ~= false and game:GetService("Lighting").GlobalShadows ~= _G.NormalLightingSettings.GlobalShadows then
+            _G.NormalLightingSettings.GlobalShadows = game:GetService("Lighting").GlobalShadows
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").GlobalShadows = false
+        end
+    end)
+ 
+    game:GetService("Lighting"):GetPropertyChangedSignal("Ambient"):Connect(function()
+        if game:GetService("Lighting").Ambient ~= Color3.fromRGB(178, 178, 178) and game:GetService("Lighting").Ambient ~= _G.NormalLightingSettings.Ambient then
+            _G.NormalLightingSettings.Ambient = game:GetService("Lighting").Ambient
+            if not _G.FullBrightEnabled then
+                repeat
+                    wait()
+                until _G.FullBrightEnabled
+            end
+            game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
+        end
+    end)
+ 
+    game:GetService("Lighting").Brightness = 1
+    game:GetService("Lighting").ClockTime = 12
+    game:GetService("Lighting").FogEnd = 786543
+    game:GetService("Lighting").GlobalShadows = false
+    game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
+ 
+    local LatestValue = true
+    spawn(function()
+        repeat
+            wait()
+        until _G.FullBrightEnabled
+        while wait() do
+            if _G.FullBrightEnabled ~= LatestValue then
+                if not _G.FullBrightEnabled then
+                    game:GetService("Lighting").Brightness = _G.NormalLightingSettings.Brightness
+                    game:GetService("Lighting").ClockTime = _G.NormalLightingSettings.ClockTime
+                    game:GetService("Lighting").FogEnd = _G.NormalLightingSettings.FogEnd
+                    game:GetService("Lighting").GlobalShadows = _G.NormalLightingSettings.GlobalShadows
+                    game:GetService("Lighting").Ambient = _G.NormalLightingSettings.Ambient
+                else
+                    game:GetService("Lighting").Brightness = 1
+                    game:GetService("Lighting").ClockTime = 12
+                    game:GetService("Lighting").FogEnd = 786543
+                    game:GetService("Lighting").GlobalShadows = false
+                    game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
+                end
+                LatestValue = not LatestValue
+            end
+        end
+    end)
+end
+ 
+_G.FullBrightExecuted = true
+_G.FullBrightEnabled = not _G.FullBrightEnabled
+    end
+})
+
+LeftGroupBox:AddToggle('No Fog', {
+    Text = 'No Fog',
+    Default = false, -- Default value (true / false)
+
+    Callback = function(Value)local Lighting = game:GetService("Lighting")
+
+-- Toggle variable to turn the effect on or off
+local toggle = false
+
+-- Function to update the settings based on the toggle state
+local function updateSettings()
+    if toggle then
+        Lighting.FogEnd = 100000
+
+        Lighting:GetPropertyChangedSignal("FogEnd"):Connect(function()
+            if toggle then
+                Lighting.FogEnd = 100000
+            end
+        end)
+
+        for _, v in ipairs(Lighting:GetDescendants()) do
+            if v:IsA("Atmosphere") then
+                v.Density = 0
+
+                v:GetPropertyChangedSignal("Density"):Connect(function()
+                    if toggle then
+                        v.Density = 0
+                    end
+                end)
+            end
+        end
+    else
+        -- Reset values when toggle is off
+        Lighting.FogEnd = 0  -- or any default value
+
+        for _, v in ipairs(Lighting:GetDescendants()) do
+            if v:IsA("Atmosphere") then
+                v.Density = 1  -- or any default value
+            end
+        end
+    end
+end
+
+-- Call the function initially to apply the settings
+updateSettings()
+
+-- Function to toggle the setting manually
+local function toggleEffect()
+    toggle = not toggle
+    updateSettings()  -- Update the settings based on the new toggle state
+end
+
+-- Example of how to toggle it manually
+-- You can call this function wherever needed in the game to toggle the effect on or off
+toggleEffect()  -- Calling this will toggle the effect
+
+    end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local RightGroupBox = Tabs["Main"]:AddRightGroupbox('Integrities')
+
+RightGroupBox:AddToggle('Anchor Body/Torso', {
+    Text = 'Anchor Body',
+    Default = false,
+    Callback = function(Value)
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local torso = character:FindFirstChild("Torso")
+
+        if torso then
+            torso.Anchored = Value
+        end
+    end
+}):AddKeyPicker('AnchorKeybind', {
+    Default = 'P',
+    Mode = 'Toggle',
+    Text = 'Anchor Body Keybind',
+    NoUI = false
+})
+
+
+
+RightGroupBox:AddToggle('MyToggle', {
+    Text = 'Anti AFK',
+    Default = false, 
+    Callback = function(Value)local vu = game:GetService("VirtualUser")
+local player = game:GetService("Players").LocalPlayer
+local isActive = false  -- This variable will control if the script is active or not
+
+-- Function to start or stop the script
+local function toggleScript()
+    isActive = not isActive  -- Toggle the active state
+    if isActive then
+        -- Connect the Idled event to simulate button press
+        player.Idled:Connect(function()
+            vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            wait(1)
+            vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        end)
+    else
+        -- Disconnect the function when deactivated
+        player.Idled:Disconnect()  -- Stop the function when toggled off
+    end
+end
+
+-- Example: You can toggle the script on or off with this function call
+toggleScript()  -- Call this to start or stop the script
+
+    end
+})
+Toggles.MyToggle:OnChanged(function()
+end)
+Toggles.MyToggle:SetValue(false)
+
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local gui
+local usernameLabel
+local distanceLabel
+local isEnabled = false -- Default to off
+
+local function createGUI()
+    gui = Instance.new("ScreenGui")
+    gui.Name = "ProximityAlert"
+    gui.Parent = player.PlayerGui
+
+    usernameLabel = Instance.new("TextLabel")
+    usernameLabel.Size = UDim2.new(0, 300, 0, 30)
+    usernameLabel.Position = UDim2.new(0.5, -150, 0, 50)
+    usernameLabel.BackgroundTransparency = 1
+    usernameLabel.TextColor3 = Color3.new(1, 1, 1)
+    usernameLabel.Font = Enum.Font.SourceSans
+    usernameLabel.TextScaled = true
+    usernameLabel.Visible = false
+    usernameLabel.Parent = gui
+
+    distanceLabel = Instance.new("TextLabel")
+    distanceLabel.Size = UDim2.new(0, 300, 0, 30)
+    distanceLabel.Position = UDim2.new(0.5, -150, 0, 80)
+    distanceLabel.BackgroundTransparency = 1
+    distanceLabel.TextColor3 = Color3.new(1, 1, 1)
+    distanceLabel.Font = Enum.Font.SourceSans
+    distanceLabel.TextScaled = true
+    distanceLabel.Visible = false
+    distanceLabel.Parent = gui
+end
+
+local function destroyGUI()
+    if gui then
+        gui:Destroy()
+        gui = nil
+        usernameLabel = nil
+        distanceLabel = nil
+    end
+end
+
+local function updateProximity()
+    if not isEnabled or not gui then return end
+
+    local closestPlayer = nil
+    local closestDistance = math.huge
+
+    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local otherRootPart = otherPlayer.Character.HumanoidRootPart
+            local distance = (humanoidRootPart.Position - otherRootPart.Position).Magnitude
+
+            if distance <= 500 and distance < closestDistance then
+                closestPlayer = otherPlayer
+                closestDistance = distance
+            end
+        end
+    end
+
+    if closestPlayer then
+        usernameLabel.Text = "Player: " .. closestPlayer.Name
+        distanceLabel.Text = "Distance: " .. math.floor(closestDistance) .. " studs"
+        usernameLabel.Visible = true
+        distanceLabel.Visible = true
+    else
+        usernameLabel.Visible = false
+        distanceLabel.Visible = false
+    end
+end
+
+local function toggleProximityAlert(state)
+    isEnabled = state
+    if isEnabled then
+        createGUI()
+    else
+        destroyGUI()
+    end
+end
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if isEnabled then
+        updateProximity()
+    end
+end)
+
+-- Example toggle binding
+RightGroupBox:AddToggle('MyToggle', {
+    Text = 'Proximity Prompt',
+    Default = false,
+    Tooltip = 'If a player is close to you, a GUI shows',
+    Callback = function(Value)
+        toggleProximityAlert(Value)
+    end
+})
+
+
+
+
+
+
+
+
+
+
+
+local LeftGroupBox = Tabs.Main:AddLeftGroupbox('Mob Farm')
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+
+LeftGroupBox:AddToggle('MyToggle', {
+    Text = 'Enable Selection',
+    Default = false,
+    Tooltip = 'Enable or disable mob selection',
+
+    Callback = function(Value)
+        _G.SelectionEnabled = Value
+    end
+})
+
+-- Dropdown
+LeftGroupBox:AddDropdown('MyDropdown', {
+    Values = { 'None' },
+    Default = 1,
+    Multi = false,
+
+    Text = 'Select a Mob',
+    Tooltip = 'Choose a mob from the list',
+
+    Callback = function(Value)
+        _G.SelectedMob = Value
+    end
+})
+
+-- Slider for distance behind the mob
+LeftGroupBox:AddSlider('MySlider', {
+    Text = 'Distance Behind Mob',
+    Default = 5,
+    Min = 0,
+    Max = 15,
+    Rounding = 0,
+    Compact = false,
+
+    Callback = function(Value)
+        _G.DistanceBehind = Value
+    end
+})
+
+_G.DistanceBehind = 5 -- Default distance
+
+-- Function to update the dropdown every second
+local function updateDropdown()
+    while task.wait(1) do
+        local mobList = {}
+
+        for _, obj in ipairs(workspace.Alive:GetChildren()) do
+            if obj:FindFirstChild("MobType") then
+                table.insert(mobList, obj.Name)
+            end
+        end
+
+        if #mobList == 0 then
+            table.insert(mobList, "None")
+        end
+
+        Options.MyDropdown:SetValues(mobList)
+    end
+end
+
+-- Function to teleport the player when enabled
+local function teleportLoop()
+    while task.wait(0.1) do
+        if _G.SelectionEnabled and _G.SelectedMob then
+            local targetMob = workspace.Alive:FindFirstChild(_G.SelectedMob)
+            if targetMob and targetMob:IsA("Model") and targetMob.PrimaryPart then
+                -- Get the position behind the mob
+                local behindPosition = targetMob.PrimaryPart.CFrame * CFrame.new(0, 0, _G.DistanceBehind)
+                LocalPlayer.Character:SetPrimaryPartCFrame(behindPosition)
+            end
+        end
+    end
+end
+
+task.spawn(updateDropdown)
+task.spawn(teleportLoop)
+
+
+
+
+
+
+
+
+
+local LeftGroupBox = Tabs['ESP']:AddLeftGroupbox('Configuration')
+
+LeftGroupBox:AddToggle('Player ESP', {
+    Text = 'Players',
+    Default = false,
+    Callback = function(Value)-- Check if the ESP toggle state exists, and initialize it if not
+if _G.espEnabled == nil then
+    _G.espEnabled = false
+end
+
+-- Function to toggle ESP
+local function toggleESP()
+    _G.espEnabled = not _G.espEnabled
+    if not _G.espEnabled then
+        -- Remove ESP from all players when disabled
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("Head") then
+                local billboardGui = player.Character.Head:FindFirstChild("TadachiisESPTags")
+                if billboardGui then
+                    billboardGui:Destroy()
+                end
+            end
+        end
+    end
+    print("ESP is now " .. (_G.espEnabled and "enabled" or "disabled"))
+end
+
+-- Function to update ESP
+local function updatePlayerESP()
+    if not _G.espEnabled then return end -- Exit if ESP is disabled
+
+    local localCharacter = game.Players.LocalPlayer.Character
+    if not localCharacter then
+        return
+    end
+
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            local distance = (localCharacter.Head.Position - player.Character.Head.Position).Magnitude
+            local billboardGui = player.Character.Head:FindFirstChild("TadachiisESPTags")
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if not humanoid then continue end -- Skip if no humanoid is found
+
+            local currentHealth = math.floor(humanoid.Health)
+            local maxHealth = math.floor(humanoid.MaxHealth)
+
+            if not billboardGui then
+                billboardGui = Instance.new("BillboardGui")
+                billboardGui.Name = "TadachiisESPTags"
+                billboardGui.Adornee = player.Character.Head
+                billboardGui.Size = UDim2.new(0, 100, 0, 50)
+                billboardGui.StudsOffset = Vector3.new(0, 2, 0)
+                billboardGui.AlwaysOnTop = true
+                billboardGui.LightInfluence = 1
+                billboardGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+                billboardGui.Parent = player.Character.Head
+
+                local textLabel = Instance.new("TextLabel")
+                textLabel.Name = "NameLabel"
+                textLabel.Text = player.Name .. "\nDistance: " .. math.floor(distance) ..
+                                  "\nHP: " .. currentHealth .. "/" .. maxHealth
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.BackgroundTransparency = 1
+                textLabel.TextColor3 = Color3.new(1, 0, 0)
+                textLabel.TextScaled = true
+                textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+                textLabel.TextStrokeTransparency = 0
+                textLabel.Visible = true
+                textLabel.Parent = billboardGui
+            else
+                billboardGui.NameLabel.Text = player.Name .. "\nDistance: " .. math.floor(distance) ..
+                                              "\nHP: " .. currentHealth .. "/" .. maxHealth
+            end
+        end
+    end
+end
+
+-- Connect the updatePlayerESP function to the Heartbeat event
+if not _G.espConnection then
+    _G.espConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        updatePlayerESP()
+    end)
+end
+
+-- Toggle ESP when script is executed
+toggleESP()
+
+
+    end
+})
+
+
+LeftGroupBox:AddToggle('Enable Mob ESP', {
+    Text = 'Mobs',
+    Default = false,
+    Callback = function(Value)
+        getgenv().Rainbow = false
+        getgenv().mobEspEnabled = Value
+
+        -- Function to clear all Mob ESP
+        local function clearMobESP()
+            for _, label in pairs(getgenv().mobLabels_Line1 or {}) do
+                label.Visible = false
+                label:Remove()
+            end
+            for _, label in pairs(getgenv().mobLabels_Line2 or {}) do
+                label.Visible = false
+                label:Remove()
+            end
+            getgenv().mobLabels_Line1 = {}
+            getgenv().mobLabels_Line2 = {}
+
+            if getgenv().MobEvents then
+                for _, event in pairs(getgenv().MobEvents) do
+                    if event then event:Disconnect() end
+                end
+            end
+            getgenv().MobEvents = {}
+
+            game:GetService("RunService"):UnbindFromRenderStep("ESP Mob V4")
+        end
+
+        -- Function to initialize Mob ESP
+        local function initMobESP()
+            if not getgenv().mobEspEnabled then return end
+
+            getgenv().mobLabels_Line1 = getgenv().mobLabels_Line1 or {}
+            getgenv().mobLabels_Line2 = getgenv().mobLabels_Line2 or {}
+            getgenv().MobEvents = getgenv().MobEvents or {}
+
+            -- Create a text label for ESP
+            local function synTextLabel()
+                local TextLabel = Drawing.new("Text")
+                TextLabel.Text = "Mob"
+                TextLabel.Size = 24
+                TextLabel.Center = true
+                TextLabel.Outline = true
+                TextLabel.Color = Color3.new(1, 0, 0)
+                TextLabel.OutlineColor = Color3.new(0, 0, 0)
+                return TextLabel
+            end
+
+            -- Convert world point to viewport
+            local function worldpoint_to_viewpoint(pos)
+                local pos, in_fov = workspace.CurrentCamera:WorldToViewportPoint(pos.p)
+                return {Vector2.new(pos.X, pos.Y), in_fov}
+            end
+
+            -- Add mob to the rendering list
+            local function addMobToRenderList(mob)
+                if mob:FindFirstChild("MobType") and mob:FindFirstChild("Head") then
+                    if getgenv().mobLabels_Line1[mob] == nil then
+                        getgenv().mobLabels_Line1[mob] = synTextLabel()
+                        getgenv().mobLabels_Line2[mob] = synTextLabel()
+                        getgenv().mobLabels_Line1[mob].Visible = false
+                        getgenv().mobLabels_Line2[mob].Visible = false
+                    end
+                end
+            end
+
+            -- Event handling for adding/removing mobs
+            getgenv().MobEvents["MobAdded"] = workspace.Alive.ChildAdded:Connect(addMobToRenderList)
+            getgenv().MobEvents["MobRemoved"] = workspace.Alive.ChildRemoved:Connect(function(mob)
+                if getgenv().mobLabels_Line1[mob] then
+                    getgenv().mobLabels_Line1[mob].Visible = false
+                    getgenv().mobLabels_Line1[mob]:Remove()
+                    getgenv().mobLabels_Line1[mob] = nil
+
+                    getgenv().mobLabels_Line2[mob].Visible = false
+                    getgenv().mobLabels_Line2[mob]:Remove()
+                    getgenv().mobLabels_Line2[mob] = nil
+                end
+            end)
+
+            -- Add existing mobs on initialization
+            for _, mob in pairs(workspace.Alive:GetChildren()) do
+                addMobToRenderList(mob)
+            end
+
+            -- Render step for updating ESP
+            game:GetService("RunService"):BindToRenderStep("ESP Mob V4", 201, function()
+                if not getgenv().mobEspEnabled then
+                    clearMobESP()
+                    return
+                end
+
+                for mob, renderobject in pairs(getgenv().mobLabels_Line1) do
+                    local head = mob:FindFirstChild("Head")
+                    local humanoid = mob:FindFirstChildOfClass("Humanoid")
+
+                    if head and humanoid then
+                        local pos_and_infov = worldpoint_to_viewpoint(head.CFrame)
+                        renderobject.Position = pos_and_infov[1]
+                        getgenv().mobLabels_Line2[mob].Position = renderobject.Position + Vector2.new(0, renderobject.TextBounds.Y)
+
+                        -- Get health details
+                        local currentHealth = math.floor(humanoid.Health)
+                        local maxHealth = math.floor(humanoid.MaxHealth)
+                        local healthPercent = (humanoid.Health / humanoid.MaxHealth) * 100
+
+                        -- Set text for name and health
+                        renderobject.Text = string.format("%s", mob.Name)
+                        getgenv().mobLabels_Line2[mob].Text = string.format("HP: %d/%d (%.0f%%)", currentHealth, maxHealth, healthPercent)
+
+                        renderobject.Color = getgenv().Rainbow and Color3.fromHSV(tick() * 128 % 255 / 255, 1, 1) or Color3.new(1, 0, 0)
+                        getgenv().mobLabels_Line2[mob].Color = Color3.new(1, 1, 1)
+
+                        renderobject.Visible = pos_and_infov[2]
+                        getgenv().mobLabels_Line2[mob].Visible = renderobject.Visible
+                    elseif head then
+                        -- If no humanoid, just show name
+                        local pos_and_infov = worldpoint_to_viewpoint(head.CFrame)
+                        renderobject.Position = pos_and_infov[1]
+                        getgenv().mobLabels_Line2[mob].Position = renderobject.Position + Vector2.new(0, renderobject.TextBounds.Y)
+
+                        renderobject.Text = string.format("%s", mob.Name)
+                        getgenv().mobLabels_Line2[mob].Text = "[Mob]"
+
+                        renderobject.Visible = pos_and_infov[2]
+                        getgenv().mobLabels_Line2[mob].Visible = renderobject.Visible
+                    end
+                end
+            end)
+        end
+
+        -- Toggle ESP
+        if getgenv().mobEspEnabled then
+            initMobESP()
+        else
+            clearMobESP()
+        end
+    end
+})
+
+
+
+
+
+
+local LeftGroupBox = Tabs["Auto Parry"]:AddLeftGroupbox('Configurations')
+
+-- Get required services
+local UserInputService = cloneref(game:GetService("UserInputService"))
+local RunService = cloneref(game:GetService("RunService"))
+local Players = cloneref(game:GetService("Players"))
+local LocalPlayer = Players.LocalPlayer
+
+-- Virtual input for safe key pressing
+local VirtualInput = cloneref(game:GetService("VirtualInputManager"))
+
+-- Entity storage
+local EntityFolder = cloneref(workspace:WaitForChild("Alive"))
+
+
+-- Toggles
+local AutoParryEnabled = false
+local AutoDodgeEnabled = false
+
+-- Cooldowns
+local LastParryTime = 0
+local LastDodgeTime = 0
+local DodgeCooldown = 1
+
+-- Parry Delay (adjustable via UI)
+local ParryDelay = 0.1 -- Default delay
+
+-- Prevents duplicate notifications
+local ConflictNotified = false
+
+-- Function to handle conflicts
+local function CheckConflict()
+    if AutoParryEnabled and AutoDodgeEnabled then
+        if not ConflictNotified then
+            Library:Notify("[Warning] Both AutoParry and AutoDodge are enabled! This may cause conflicts.")
+            ConflictNotified = true
+        end
+    else
+        ConflictNotified = false -- Reset when the conflict is resolved
+    end
+end
+
+-- Function to parry
+local function PerformParry()
+    task.wait(ParryDelay) -- Use adjustable delay
+
+    VirtualInput:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
+    wait(0.001)
+    VirtualInput:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
+
+    LastParryTime = tick()
+end
+
+-- Function to dodge
+local function PerformDodge()
+    task.wait(0.1) -- Fixed dodge reaction time
+
+    VirtualInput:SendKeyEvent(true, Enum.KeyCode.Q, false, nil)
+
+    LastDodgeTime = tick()
+end
+
+-- Feint detection
+local function HandleFeint(Humanoid)
+    for _, Track in pairs(Humanoid:GetPlayingAnimationTracks()) do
+        if Track.Name:lower():find("feint") then
+            if AutoDodgeEnabled then
+                PerformDodge()
+            end
+            return true
+        end
+    end
+    return false
+end
+
+-- AutoParry & Dodge logic
+local function AutoParryAndDodge()
+    CheckConflict()
+
+    local Character = LocalPlayer.Character
+    if not Character then return end
+
+    for _, Entity in pairs(EntityFolder:GetChildren()) do
+        if Entity ~= Character and Entity:FindFirstChild("HumanoidRootPart") then
+            local Distance = (Entity.HumanoidRootPart.Position - Character.HumanoidRootPart.Position).Magnitude
+            local EnemyHumanoid = Entity:FindFirstChildOfClass("Humanoid")
+
+            if EnemyHumanoid and Distance < 10 then
+                if HandleFeint(EnemyHumanoid) then return end
+
+                if AutoParryEnabled and tick() - LastParryTime >= ParryDelay then
+                    PerformParry()
+                elseif AutoDodgeEnabled and tick() - LastDodgeTime >= DodgeCooldown then
+                    PerformDodge()
+                end
+            end
+        end
+    end
+end
+
+-- UI Toggles
+LeftGroupBox:AddToggle("AutoParryToggle", {
+    Text = "Auto Parry",
+    Default = false,
+    Tooltip = "Enable or disable auto parry",
+    Callback = function(Value)
+        AutoParryEnabled = Value
+        CheckConflict()
+    end
+})
+
+LeftGroupBox:AddToggle("AutoDodgeToggle", {
+    Text = "Auto Dodge",
+    Default = false,
+    Tooltip = "Enable or disable auto dodge",
+    Callback = function(Value)
+        AutoDodgeEnabled = Value
+        CheckConflict()
+    end
+})
+
+-- Parry Delay Slider
+LeftGroupBox:AddSlider("ParryDelaySlider", {
+    Text = "Parry Delay",
+    Default = 1,
+    Min = 0,
+    Max = 3,
+    Rounding = 0,
+    Suffix = "s",
+    Callback = function(Value)
+        ParryDelay = Value
+    end
+})
+
+-- Connect function to RunService
+RunService.RenderStepped:Connect(AutoParryAndDodge)
+
+
+local LeftGroupBox = Tabs["Tutorial"]:AddLeftGroupbox('Autofarms')
+
+local MyButton = LeftGroupBox:AddButton({
+    Text = 'Autofarm boss',
+    Func = function()
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+-- Locations
+local Spot1 = Vector3.new(-303.585, 15.058, -68.048)
+local Spot2 = Vector3.new(-12.433, 12.259, -417.197)
+
+-- Boss name
+local BossName = "Velor Yth Carven.3"
+
+-- NoClip Function
+local function enableNoClip()
+    RunService.Stepped:Connect(function()
+        for _, v in pairs(Character:GetChildren()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    end)
+end
+
+-- Tween Function
+local function tweenToPosition(targetPosition, duration)
+    local goal = {Position = targetPosition}
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(HumanoidRootPart, tweenInfo, goal)
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+-- Kill/Void Script (Runs Repeatedly)
+local function killNearbyEnemies()
+    while true do
+        for _, mob in pairs(workspace.Alive:GetChildren()) do
+            if mob:IsA("Model") and mob.Name == BossName then
+                local humanoid = mob:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid.Health = 0
+                end
+            end
+        end
+        task.wait(0.5) -- Runs every 0.5 seconds
+    end
+end
+
+-- Attach to the back of the boss (Original Script)
+_G.DistanceBehind = 5 -- Default distance
+
+local function teleportLoop()
+    while task.wait(0.1) do
+        local targetMob = workspace.Alive:FindFirstChild(BossName)
+        if targetMob and targetMob:IsA("Model") and targetMob.PrimaryPart then
+            local behindPosition = targetMob.PrimaryPart.CFrame * CFrame.new(0, 0, _G.DistanceBehind)
+            Character:SetPrimaryPartCFrame(behindPosition)
+        end
+    end
+end
+
+-- Auto Click M1 (Runs Last)
+local function autoClickM1()
+    while true do
+        UserInputService.InputBegan:Fire(UserInputService, Enum.UserInputType.MouseButton1, false)
+        task.wait(0.1)
+    end
+end
+
+-- Auto Click M1 (Runs Last)
+local function HolsterWeapon()
+    while true do
+        UserInputService.InputBegan:Fire(UserInputService, Enum.UserInputType.X, false)
+        task.wait(0.1)
+    end
+end
+
+-- No Fall Script (Runs in the Background)
+local function noFallDamage()
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+
+    local oldNamecall = mt.__namecall
+    local NoFallEnabled = true -- Always enabled
+
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+
+        if NoFallEnabled and method == "FireServer" and typeof(self) == "Instance" and self.Name == "MasterEvent" then
+            if typeof(args[1]) == "table" and args[1].Config == "FallDamage" then
+                return -- Block the fall damage event when NoFall is enabled
+            end
+        end
+
+        return oldNamecall(self, ...)
+    end)
+
+    setreadonly(mt, true)
+end
+
+-- Execute the process
+task.spawn(noFallDamage) -- No fall runs in background
+enableNoClip()
+tweenToPosition(Spot1, 3)
+task.wait(0.5)
+tweenToPosition(Spot2, 3)
+task.wait(0.5)
+task.spawn(killNearbyEnemies)
+task.spawn(teleportLoop) -- Uses the original boss attachment method
+task.spawn(HolsterWeapon)
+task.spawn(autoClickM1)
+    end,
+    DoubleClick = false,
+    Tooltip = ''
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Example of dynamically-updating watermark with common traits (fps and ping)
+local FrameTimer = tick()
+local FrameCounter = 0;
+local FPS = 60;
+
+local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(function()
+    FrameCounter += 1;
+
+    if (tick() - FrameTimer) >= 1 then
+        FPS = FrameCounter;
+        FrameTimer = tick();
+        FrameCounter = 0;
+    end;
+
+    Library:SetWatermark(('ZYG HUB [V3] | %s fps | %s ping'):format(
+        math.floor(FPS),
+        math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
+    ));
+end);
+
+
+
+Library:OnUnload(function()
+    WatermarkConnection:Disconnect()
+
+    Library.Unloaded = true
+end)
+
+-- UI Settings
+local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+
+-- I set NoUI so it does not show up in the keybinds menu
+MenuGroup:AddButton('Unload', function() Library:Unload() end)
+
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'LeftAlt', NoUI = true, Text = 'Menu keybind' })
+
+local LeftGroupBox = Tabs["UI Settings"]:AddLeftGroupbox('Toggles')
+
+LeftGroupBox:AddToggle('Deepwoken Mod Join', {
+    Text = 'Toggle Notification On Mod Join',
+    Default = true,
+    Tooltip = 'Notification On mod join', 
+
+    Callback = function(Value)
+    end
+})
+
+
+LeftGroupBox:AddToggle('MyToggle', {
+    Text = 'Notify On New Mob added',
+    Default = false,
+    Tooltip = 'Notify when a new mob is added',
+
+    Callback = function(Value)
+        _G.NotifyEnabled = Value
+    end
+})
+
+_G.NotifyEnabled = false -- Default state
+
+-- Function to detect when a new mob is added
+workspace.Alive.ChildAdded:Connect(function(child)
+    task.wait(0.1) -- Small delay to ensure child is fully loaded
+
+    if _G.NotifyEnabled and child:IsA("Model") and child:FindFirstChild("MobType") then
+        Library:Notify(child.Name .. " has spawned!", 2)
+    end
+end)
+
+
+
+
+LeftGroupBox:AddToggle('Keybinds Toggle', {
+    Text = 'Toggle Keybinds Menu',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Turns keybind menu on and off', 
+
+    Callback = function(Value)
+toggleState = toggleState or false
+
+local function toggle()
+    toggleState = not toggleState
+    Library.KeybindFrame.Visible = toggleState 
+end
+
+toggle()
+    end
+})
+
+
+
+
+
+
+
+Library.ToggleKeybind = Options.MenuKeybind
+
+-- Addons:
+-- SaveManager (Allows you to have a configuration system)
+-- ThemeManager (Allows you to have a menu theme system)
+
+-- Hand the library over to our managers
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+-- Ignore keys that are used by ThemeManager.
+-- (we dont want configs to save themes, do we?)
+SaveManager:IgnoreThemeSettings()
+
+-- Adds our MenuKeybind to the ignore list
+-- (do you want each config to have a different menu key? probably not.)
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+
+-- use case for doing it this way:
+-- a script hub could have themes in a global folder
+-- and game configs in a separate folder per game
+ThemeManager:SetFolder('ZYG HUB [V3]')
+SaveManager:SetFolder('ZYG HUB [V3]/Script Settings')
+
+-- Builds our config menu on the right side of our tab
+SaveManager:BuildConfigSection(Tabs['UI Settings'])
+
+-- Builds our theme menu (with plenty of built in themes) on the left side
+-- NOTE: you can also call ThemeManager:ApplyToGroupbox to add it to a specific groupbox
+ThemeManager:ApplyToTab(Tabs['UI Settings'])
+
+-- You can use the SaveManager:LoadAutoloadConfig() to load a config
+-- which has been marked to be one that auto loads!
+SaveManager:LoadAutoloadConfig()
+
+
+
+--Moderator Join Script
+local groupId = 15431531
+local players = game:GetService("Players")
+local soundService = game:GetService("SoundService")
+
+local function playSound(soundId)
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://" .. soundId
+    sound.Volume = 1
+    sound.Parent = soundService
+    sound:Play()
+    game:GetService("Debris"):AddItem(sound, 3)
+end
+
+Library:Notify("Checking players for group membership...", 5)
+
+local function checkPlayer(player)
+    local playerName = player.Name
+    Library:Notify("Checking: " .. playerName, 3)
+    
+    if player:IsInGroup(groupId) then
+        Library:Notify(playerName .. " (Moderator) has joined the game!", 15)
+        playSound("134569069127046")
+
+        player.AncestryChanged:Connect(function()
+            if not player.Parent then
+                Library:Notify(playerName .. " (Moderator) has left the game!", 15)
+                playSound("126849058770164")
+            end
+        end)
+    end
+end
+
+for _, player in ipairs(players:GetPlayers()) do
+    checkPlayer(player)
+end
+
+players.PlayerAdded:Connect(checkPlayer)
+
+
+
+
+--Keybinds
+Options.SpeedHackKeybind:OnClick(function()
+    Toggles.SpeedHack:SetValue(not Toggles.SpeedHack.Value)
+end)
+
+Options.JumpPowerKeybind:OnClick(function()
+    Toggles.JumpPowerToggle:SetValue(not Toggles.JumpPowerToggle.Value)
+end)
+
+Options.FlyKeybind:OnClick(function()
+    Toggles.FlyToggle:SetValue(not Toggles.FlyToggle.Value)
+end)
+
+Options.NoClipKeybind:OnClick(function()
+    Toggles.NoClipToggle:SetValue(not Toggles.NoClipToggle.Value)
+end)
+
+Options.NoFallKeybind:OnClick(function()
+    Toggles.NoFallToggle:SetValue(not Toggles.NoFallToggle.Value)
+end)
+
+Options.InfJumpKeybind:OnClick(function()
+    Toggles["Inf Jump"]:SetValue(not Toggles["Inf Jump"].Value)
+end)
+
+Options.AnchorKeybind:OnClick(function()
+    Toggles["Anchor Body/Torso"]:SetValue(not Toggles["Anchor Body/Torso"].Value)
+end)
+
+Options.AutoParryKeybind:OnClick(function()
+    Toggles.APK:SetValue(not Toggles.APK.Value)
+end)
+
+Options.AutoDodgeKeybind:OnClick(function()
+    Toggles.ADK:SetValue(not Toggles.ADK.Value)
+end)
