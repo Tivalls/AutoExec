@@ -1,5 +1,0 @@
-game:GetService("StarterGui"):SetCore("SendNotification",{
-	Title = "ZYG HUB [V3]", -- Required
-	Text = "Cannot Execute Script in the lobby.",
-	Icon = "rbxassetid://87338757722975"
-})
