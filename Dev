@@ -533,7 +533,7 @@ local MyButton = RightGroupBox:AddButton({
 
 local MyButton = RightGroupBox:AddButton({
     Text = 'Simple Spy',
-    Func = function()loadstring(game:HttpGet("https://pastebin.com/raw/U2r2Q9Kh", true))()
+    Func = function()loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/SimpleSpyV3/main.lua"))()
     end,
     DoubleClick = false,
 })
