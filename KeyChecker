@@ -1,0 +1,41 @@
+return function()
+    local FIREBASE_PROJECT_ID = "zyg-hub-v3-wl" -- Replace with your actual Firebase Project ID
+    local HttpService = game:GetService("HttpService")
+    local currentScript = script
+    local embeddedKey = nil
+
+    -- Attempt to find a StringValue named "script_key" parented to this script
+    local keyObject = currentScript:FindFirstChild("script_key")
+    if keyObject and keyObject:IsA("StringValue") then
+        embeddedKey = keyObject.Value
+    else
+        -- If no StringValue, try to find a direct variable named 'script_key' in the environment
+        local environment = getfenv(currentScript)
+        embeddedKey = environment.script_key
+    end
+
+    if not embeddedKey or embeddedKey == "" then
+        warn("Key Checker: Embedded API key not found or is empty.")
+        return false
+    end
+
+    local databaseUrl = "https://" .. FIREBASE_PROJECT_ID .. "-default-rtdb.firebaseio.com/apiKeys/" .. embeddedKey .. ".json"
+    local success, result = pcall(HttpService.RequestAsync, {
+        Url = databaseUrl,
+        Method = "GET"
+    })
+
+    if success and result.StatusCode == 200 then
+        local response = HttpService:JSONDecode(result.Body)
+        if response == true then
+            print("Key Checker: Embedded API key is valid.")
+            return true
+        else
+            warn("Key Checker: Embedded API key is invalid.")
+            return false
+        end
+    else
+        warn("Key Checker: Error checking API Key:", result)
+        return false
+    end
+end
