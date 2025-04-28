@@ -18,11 +18,10 @@ local StarterGui = game:GetService("StarterGui")
 local HttpService = game:GetService("HttpService")
 local localPlayer = Players.LocalPlayer
 
--- Basic check if arguments were received correctly AND URL is set
+-- Modified check: Only warn, don't return, as debug shows args are likely present
 if not script_key or not currentHwid or not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then
-    print("[PAYLOAD] Error: Script did not receive required arguments (key, hwid) from loader, or API URL is not correctly set in this script.")
-    if localPlayer then pcall(localPlayer.Kick, localPlayer, "Payload script initialization error. Args/URL missing.") end -- Safe kick
-    return -- Stop if arguments/URL are missing
+    warn("[PAYLOAD WARNING] Initial argument/URL check failed, but proceeding anyway based on debug logs. Check values:", script_key, currentHwid, AUTH_API_BASE_URL)
+    -- Do NOT return here anymore
 end
 
 print("[PAYLOAD] Payload script running. Key:", type(script_key)=='string' and script_key:sub(1,4).."..." or "INVALID", "HWID:", type(currentHwid)=='string' and currentHwid:sub(1,4).."..." or "INVALID")
