@@ -1,11 +1,7 @@
--- Main Payload Script (T2 - With Chat Monitor & Blacklist Call)
--- Receives script_key and currentHwid from the loader script
+-- Main Payload Script (T2 - Improved Error Reporting for Sub-Scripts)
 
 local script_key, currentHwid = ... -- Arguments passed from the loader script
-
--- Define AUTH_API_BASE_URL again here or pass as a 3rd argument from loader
--- Ensure this MATCHES the URL in your loader script
-local AUTH_API_BASE_URL = "https://02a585bf-a727-4778-991e-6c9348a4b9c6-00-rayh4w55yljc.kirk.replit.dev/" -- MUST MATCH LOADER
+local AUTH_API_BASE_URL = "https://02a585bf-a727-4778-991e-6c9348a4b9c6-00-rayh4w55yljc.kirk.replit.dev/" -- MUST MATCH LOADER! Replace placeholder.
 
 -- Services
 local Players = game:GetService("Players")
@@ -13,14 +9,12 @@ local StarterGui = game:GetService("StarterGui")
 local HttpService = game:GetService("HttpService")
 local localPlayer = Players.LocalPlayer
 
--- Basic check if arguments were passed correctly
 if not script_key or not currentHwid or not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then
-    print("[PAYLOAD] Error: Loader did not pass required arguments (key, hwid) or API URL is not set.")
-    if localPlayer then localPlayer:Kick("Payload script initialization error.") end
-    return -- Stop if arguments are missing
+    print("[PAYLOAD] Error: Init args missing or API URL not set.")
+    if localPlayer then localPlayer:Kick("Payload script init error.") end; return
 end
 
-print("[PAYLOAD] Payload script running. Key:", script_key, "HWID:", currentHwid)
+print("[PAYLOAD] Running. Key:", script_key:sub(1,4).."...", "HWID:", currentHwid:sub(1,4).."...")
 
 local monitorActive = true
 local flaggedWords = {
@@ -34,144 +28,116 @@ local flaggedWords = {
     "he exploits", "shes exploiting", "theyre exploiting", "is hacking", "are hacking",
     "using cheats", "hes cheating", "shes cheating", "i have proof", "got proof"
 }
-local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_" -- Your webhook
 
--- Find a working http request function from common executors
-local http_request = syn and syn.request or request or http and http.request or fluxus and fluxus.request
+
+local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_"
+local http_request = syn and syn.request or request or http and http.request or fluxus and fluxus.request -- Find executor request func
 
 local function sendAndBlacklist(flaggedMessage)
-    if not monitorActive then return end
-    monitorActive = false -- Prevent multiple triggers
-
-    print("[PAYLOAD] Flagged word detected! Sending notification and blacklist request.")
-
-    local username = localPlayer and localPlayer.Name or "Unknown Player"
-    local date = os.date("%Y-%m-%d")
-    local time = os.date("%H:%M:%S")
-
-    -- 1. Send Webhook Notification
-    local notificationData = {
-        ["content"] = "**Automatic Key Blacklist Triggered**",
-        ["embeds"] = { {
-            ["title"] = "Blacklist Details (Flagged Word)",
-            ["fields"] = {
-                {["name"] = "Username", ["value"] = username, ["inline"] = true},
-                {["name"] = "Used Key", ["value"] = "`"..tostring(script_key).. "`", ["inline"] = false}, -- Use passed script_key
-                {["name"] = "Flagged Message", ["value"] = "||"..flaggedMessage.."||", ["inline"] = false},
-                {["name"] = "Date", ["value"] = date, ["inline"] = true},
-                {["name"] = "Time", ["value"] = time, ["inline"] = true},
-                {["name"] = "HWID", ["value"] = tostring(currentHwid), ["inline"] = false} -- Use passed currentHwid
-            },
-            ["color"] = 16711680 -- Red
-        } }
-    }
-    if http_request then
-        pcall(function()
-            http_request({Url = webhook_url, Method = "POST", Headers = {["Content-Type"]="application/json"}, Body = HttpService:JSONEncode(notificationData)})
-        end)
-    else
-        print("[PAYLOAD] Error: Could not find HTTP request function for webhook.")
-    end
-
-    -- 2. Send Blacklist Request to YOUR API
-    local blacklistUrl = AUTH_API_BASE_URL .. "/blacklist"
-    local blacklistPayload = HttpService:JSONEncode({ key = script_key, reason = "Flagged word detected in chat: " .. flaggedMessage }) -- Use passed script_key
-
-    if http_request then
-        local blacklistSuccess, blacklistResponse = pcall(function()
-            return http_request({
-                Url = blacklistUrl,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = blacklistPayload
-            })
-        end)
-        if blacklistSuccess then print("[PAYLOAD] Blacklist request sent to API.") warn("API Response:", blacklistResponse)
-        else print("[PAYLOAD] Error sending blacklist request to API.") warn("Blacklist API Error:", blacklistResponse) end
-    else
-         print("[PAYLOAD] Error: Could not find HTTP request function for blacklist API.")
-    end
-
-    -- 3. Kick Player
-    if localPlayer then
-        localPlayer:Kick("Zyg Hub [V3]\nKicked for using flagged language. Your key has been blacklisted.")
-    end
+    -- ... (Keep the sendAndBlacklist function exactly as it was in the previous version) ...
+     if not monitorActive then return end; monitorActive = false
+     print("[PAYLOAD] Flagged word detected! Sending notification and blacklist request.")
+     local username = localPlayer and localPlayer.Name or "Unknown"; local date = os.date("%Y-%m-%d"); local time = os.date("%H:%M:%S")
+     -- 1. Send Webhook Notification
+     local notificationData = { content = "**Auto Blacklist**", embeds = {{ title = "Blacklist (Flagged Word)", fields = { {name="User", value=username, inline=true}, {name="Key", value="`"..tostring(script_key).."`", inline=false}, {name="Message", value="||"..flaggedMessage.."||", inline=false}, {name="Date", value=date, inline=true}, {name="Time", value=time, inline=true}, {name="HWID", value=tostring(currentHwid), inline=false} }, color = 16711680 }} }
+     if http_request then pcall(function() http_request({Url=webhook_url, Method="POST", Headers={["Content-Type"]="application/json"}, Body=HttpService:JSONEncode(notificationData)}) end) else print("[PAYLOAD] Err: No HTTP func for webhook.") end
+     -- 2. Send Blacklist Request to YOUR API
+     local blacklistUrl = AUTH_API_BASE_URL .. "/blacklist"; local blacklistPayload = HttpService:JSONEncode({ key = script_key, reason = "Flagged word: " .. flaggedMessage })
+     if http_request then local success, response = pcall(function() return http_request({ Url = blacklistUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = blacklistPayload }) end); if success then print("[PAYLOAD] Blacklist API request sent."); warn("API Resp:", response) else print("[PAYLOAD] Blacklist API error."); warn("API Err:", response) end else print("[PAYLOAD] Err: No HTTP func for blacklist API.") end
+     -- 3. Kick Player
+     if localPlayer then localPlayer:Kick("Zyg Hub [V3]\nKicked: Flagged language. Key disabled.") end
 end
 
--- Connect to the Chatted event
+-- Connect Chat Monitor
 if localPlayer then
-    local chatConnection = localPlayer.Chatted:Connect(function(message)
-        if not monitorActive then return end
-        for _, word in ipairs(flaggedWords) do
-            if message:lower():find(word:lower()) then
-                sendAndBlacklist(message)
-                break
-            end
-        end
-    end)
+    localPlayer.Chatted:Connect(function(message) if not monitorActive then return end; for _, word in ipairs(flaggedWords) do if message:lower():find(word:lower()) then sendAndBlacklist(message); break end end end)
     print("[PAYLOAD] Chat monitoring active.")
-    -- You might want to disconnect this on cleanup: game:GetService("Players").PlayerRemoving:Connect(function(player) if player == localPlayer and chatConnection then chatConnection:Disconnect() end end)
-else
-    print("[PAYLOAD] Error: Could not find LocalPlayer to monitor chat.")
-end
+else print("[PAYLOAD] Error: No LocalPlayer for chat monitor.") end
 
-
--- Game Specific Script Execution Logic --
+-- Game Specific Script Execution Logic
 local GameScripts = {
-     [16004121360] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Mountfall", --Mountfall
+    [16004121360] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Mountfall", --Mountfall
  
-     [16732694052] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch", --Fisch
+    [16732694052] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch", --Fisch
  
-     [91797414023830] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE", --Ghoul Re
-     [7236834599613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
+    [91797414023830] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE", --Ghoul Re
+    [7236834599613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
  
-     [72368345999613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Ghoul Re Lobby
+    [72368345999613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Ghoul Re Lobby
  
-     [18863569535] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202", --Blood Samurai 2
-     [15523167319] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
-     [18860273602] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
-     [18862961320] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+    [18863569535] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202", --Blood Samurai 2
+    [15523167319] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+    [18860273602] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+    [18862961320] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
  
-     [4111023553] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Deepwoken Lobby
-     [12522889886] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+    [4111023553] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Deepwoken Lobby
+    [12522889886] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
  
-     [6832944305] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken", --Deepwoken
-     [6032399813] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [6473861193] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [5735553160] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [8668476218] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [12559711136] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [12522892314] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [12522881268] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [11108929042] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [9854906953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [9598091549] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [6832934465] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [8712356310] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-     [9528956055] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [6832944305] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken", --Deepwoken
+    [6032399813] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [6473861193] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [5735553160] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [8668476218] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [12559711136] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [12522892314] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [12522881268] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [11108929042] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [9854906953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [9598091549] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [6832934465] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [8712356310] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [9528956055] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
  
-     [10290054819] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Rune Slayer Lobby
+    [10290054819] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Rune Slayer Lobby
  
-     [99995671928896] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer", --Rune Slayer
-     [112498449402953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer%20Tutorial" --Rune Slayer Tutorial
- }
+    [99995671928896] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer", --Rune Slayer
+    [112498449402953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer%20Tutorial" --Rune Slayer Tutorial
+}
 
 local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
 
 local function ExecuteScript()
     local gameId = game.PlaceId
     local scriptUrl = GameScripts[gameId] or DefaultScript
+    print("[PAYLOAD] Determined Game ID:", gameId)
+    print("[PAYLOAD] Attempting to load Game Script URL:", scriptUrl) -- Log URL being loaded
+
     local success, scriptCode = pcall(function() return game:HttpGet(scriptUrl) end)
     if success and scriptCode then
-        local lsSuccess, lsError = pcall(loadstring(scriptCode))
-        if not lsSuccess then
-             print("[PAYLOAD] Error loading game script:", lsError)
+        print("[PAYLOAD] Game script downloaded. Compiling...")
+        local lsSuccess, lsResult = pcall(loadstring(scriptCode))
+
+        if lsSuccess then
+            if type(lsResult) == 'function' then
+                print("[PAYLOAD] Game script compiled successfully. Executing...")
+                 -- Execute the loaded game-specific script chunk
+                 local execSuccess, execError = pcall(lsResult) -- Call the loaded function
+                 if execSuccess then
+                      print("[PAYLOAD] Game script executed successfully.")
+                 else
+                      print("------------------------------------------------------")
+                      print("[PAYLOAD]RUNTIME ERROR EXECUTING GAME SCRIPT FROM:", scriptUrl)
+                      print("[PAYLOAD]ERROR MESSAGE:", execError) -- This should contain the ':128: attempt to call nil' error
+                      print("------------------------------------------------------")
+                      if localPlayer then localPlayer:Kick("Zyg Hub [V3]\nError executing game-specific script. Check loader console.") end
+                 end
+            else
+                print("------------------------------------------------------")
+                print("[PAYLOAD] LOADSTRING ERROR: Compiled result was not a function for URL:", scriptUrl)
+                print("------------------------------------------------------")
+                if localPlayer then localPlayer:Kick("Zyg Hub [V3]\nFailed to load game-specific script (not a function).") end
+            end
+        else -- loadstring failed (syntax error in game script)
+             print("------------------------------------------------------")
+             print("[PAYLOAD] LOADSTRING ERROR: Failed to compile script from URL:", scriptUrl)
+             print("[PAYLOAD] COMPILATION ERROR:", lsResult) -- lsResult contains syntax error message
+             print("------------------------------------------------------")
+             if localPlayer then localPlayer:Kick("Zyg Hub [V3]\nFailed to compile game-specific script (Syntax Error?).") end
         end
     else
         print("[PAYLOAD] Error downloading game script:", scriptCode) -- scriptCode contains error here
+        if localPlayer then localPlayer:Kick("Zyg Hub [V3]\nFailed to download game-specific script.") end
     end
 end
-
--- Removed the queue_on_teleport call as it seemed out of place / potentially problematic
 
 ExecuteScript() -- Run the game-specific script
