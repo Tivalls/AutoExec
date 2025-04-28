@@ -1,6 +1,6 @@
 -- Main Payload Script (T2 - Wrapped in Function)
 
-local script_key, currentHwid, baseApiUrlFromLoader = ... -- Arguments passed from the loader script
+local script_key, currentHwid, baseApiUrlFromLoader = ... -- Arguments passed
 print(string.format("[PAYLOAD DEBUG] Received args: key=%s | hwid=%s | apiUrl=%s", tostring(script_key), tostring(currentHwid), tostring(baseApiUrlFromLoader)))
 
 local AUTH_API_BASE_URL = baseApiUrlFromLoader or "YOUR_API_ENDPOINT_BASE_URL_HERE" -- !! REPLACE PLACEHOLDER !!
@@ -16,35 +16,26 @@ local localPlayer = Players.LocalPlayer
 local function T2_Main()
     print("[PAYLOAD] T2_Main function executing...") -- Log entry
 
-    -- Argument Check (Warn only, do not return from here)
-    if not script_key or not currentHwid then
-        warn("[PAYLOAD WARNING] Key or HWID argument was nil/false.")
-    end
-    if not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then
-        warn("[PAYLOAD WARNING] AUTH_API_BASE_URL was nil or still set to placeholder!")
-        -- Cannot proceed without API URL for blacklist function
-        if localPlayer then pcall(localPlayer.Kick, localPlayer,"Payload script config error: API URL missing.") end
-        return
-    end
+    -- Argument Check (Warn only)
+    if not script_key or not currentHwid then warn("[PAYLOAD WARNING] Key or HWID argument was nil/false.") end
+    if not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then warn("[PAYLOAD WARNING] AUTH_API_BASE_URL was nil or still set to placeholder!") end
     print("[PAYLOAD] Payload script running...")
 
-    -- Define nested functions or keep them outside if they don't rely on T2_Main scope
+    -- Define nested functions or keep them outside
     local monitorActive = true
     local flaggedWords = { /* ... your full list ... */ }
     local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_"
     local http_request = syn and syn.request or request or http and http.request or fluxus and fluxus.request
 
     local function sendAndBlacklist(flaggedMessage)
+        -- ... (Keep the sendAndBlacklist function exactly as it was) ...
          if not monitorActive then return end; monitorActive = false
          print("[MONITOR] Flagged word detected! Sending notification and blacklist request.")
          local username = localPlayer and localPlayer.Name or "Unknown"; local date = os.date("%Y-%m-%d"); local time = os.date("%H:%M:%S")
-         -- 1. Send Webhook
          local notificationData = { content = "**Auto Blacklist**", embeds = {{ title = "Blacklist (Flagged Word)", fields = { {name="User", value=username, inline=true}, {name="Key", value="`"..tostring(script_key).."`", inline=false}, {name="Message", value="||"..flaggedMessage.."||", inline=false}, {name="Date", value=date, inline=true}, {name="Time", value=time, inline=true}, {name="HWID", value=tostring(currentHwid), inline=false} }, color = 16711680 }} }
          if http_request then pcall(function() http_request({Url=webhook_url, Method="POST", Headers={["Content-Type"]="application/json"}, Body=HttpService:JSONEncode(notificationData)}) end) else print("[MONITOR] Err: No HTTP func for webhook.") end
-         -- 2. Send Blacklist API Request
          local blacklistUrl = AUTH_API_BASE_URL .. "/blacklist"; local blacklistPayload = HttpService:JSONEncode({ key = script_key, reason = "Flagged word: " .. flaggedMessage })
          if http_request then local success, response = pcall(function() return http_request({ Url = blacklistUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = blacklistPayload }) end); if success then print("[MONITOR] Blacklist API request sent."); warn("API Resp:", response) else print("[MONITOR] Blacklist API error."); warn("API Err:", response) end else print("[MONITOR] Err: No HTTP func for blacklist API.") end
-         -- 3. Kick Player
          if localPlayer then pcall(localPlayer.Kick, localPlayer, "Zyg Hub [V3]\nKicked: Flagged language. Key disabled.") end
     end
 
@@ -69,26 +60,13 @@ local function T2_Main()
             local lsSuccess, lsResult = pcall(loadstring(scriptCode))
             if lsSuccess then
                 if type(lsResult) == 'function' then
-                    local execSuccess, execError = pcall(lsResult) -- Execute the loaded function
+                    local execSuccess, execError = pcall(lsResult)
                     if not execSuccess then
-                          print("------------------------------------------------------")
-                          print("[EXECUTOR] RUNTIME ERROR EXECUTING GAME SCRIPT FROM:", scriptUrl)
-                          print("[EXECUTOR] ERROR MESSAGE:", execError) -- Should show :159: error here if it persists
-                          print("------------------------------------------------------")
-                          -- Don't kick here, let the main payload finish if possible
-                    else
-                         print("[EXECUTOR] Game script finished execution.")
-                    end
-                else
-                    print("[EXECUTOR] LOADSTRING ERROR: Compiled result was not function:", scriptUrl)
-                end
-            else
-                 print("[EXECUTOR] LOADSTRING ERROR: Failed to compile script:", scriptUrl)
-                 print("[EXECUTOR] COMPILATION ERROR:", lsResult)
-            end
-        else
-            print("[EXECUTOR] Error downloading game script:", scriptCode or "Unknown HttpGet Error")
-        end
+                          print("[EXECUTOR] RUNTIME ERROR:", execError, "from", scriptUrl) -- Log runtime error
+                    else print("[EXECUTOR] Game script finished execution.") end
+                else print("[EXECUTOR] LOADSTRING ERROR: Result not function:", scriptUrl) end
+            else print("[EXECUTOR] LOADSTRING ERROR: Compile error:", scriptUrl, "\n", lsResult) end -- lsResult has compile error
+        else print("[EXECUTOR] Error downloading game script:", scriptCode or "Unknown HttpGet Error") end
     end
 
     ExecuteScript() -- Run the game-specific script
@@ -96,4 +74,4 @@ local function T2_Main()
 end
 
 -- Return the main function so the loader can call it
-return T2_Main
+return T2_Main -- Make sure this is the very last line
