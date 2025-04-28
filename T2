@@ -94,6 +94,7 @@ local GameScripts = {
     [112498449402953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer%20Tutorial" --Rune Slayer Tutorial
 }
 
+
 local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
 
 local function ExecuteScript()
