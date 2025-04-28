@@ -1,119 +1,150 @@
--- Zyg Hub Loader Script (Wave Executor Version - Enhanced Debugging)
+-- Main Payload Script (T2 - Added Argument Debugging)
 
---[[ ======================= Configuration ======================= ]]
--- !! User pastes their key here !!
-local script_key = "8beb0ee9-d603-4cb8-ab03-796febda34e1" -- <-- PASTE USER'S API KEY
+-- Capture arguments passed from the loader script
+local script_key, currentHwid, baseApiUrlFromLoader = ...
+-- vvv ADD DEBUG LINES vvv
+print(string.format("[PAYLOAD DEBUG] Received args: key=%s | hwid=%s | apiUrl=%s", tostring(script_key), tostring(currentHwid), tostring(baseApiUrlFromLoader)))
+-- ^^^ ADD DEBUG LINES ^^^
 
--- !! URL of YOUR external API endpoint (e.g., from Replit) !!
-local AUTH_API_BASE_URL = "https://02a585bf-a727-4778-991e-6c9348a4b9c6-00-rayh4w55yljc.kirk.replit.dev/" -- <-- PASTE YOUR REPLIT/API URL
+-- Define AUTH_API_BASE_URL again here. USE THE PASSED VALUE IF AVAILABLE.
+-- !! IMPORTANT: Replace this placeholder with your actual Replit URL !!
+local AUTH_API_BASE_URL = baseApiUrlFromLoader or "YOUR_API_ENDPOINT_BASE_URL_HERE" -- Prioritize passed, fallback to placeholder
+print("[PAYLOAD DEBUG] Using AUTH_API_BASE_URL:", AUTH_API_BASE_URL)
 
--- !! URL of your main payload script (T2) !!
-local MAIN_PAYLOAD_URL = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/T2"
---[[ ============================================================= ]]
 
 -- Services
 local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService") -- Needed for JSONEncode/Decode, HttpGet
+local StarterGui = game:GetService("StarterGui")
+local HttpService = game:GetService("HttpService")
 local localPlayer = Players.LocalPlayer
 
--- GUI Setup (Make sure GUI elements are defined before use)
-local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local UIStroke = Instance.new("UIStroke")
-local UICorner = Instance.new("UICorner")
-local Title = Instance.new("TextLabel")
-local Status = Instance.new("TextLabel")
-local LoadingCircle = Instance.new("ImageLabel")
-local tweenService = game:GetService("TweenService")
-
-local function logMessage(message) print("[LOADER] " .. message) end
-
-local function setupGui()
-    -- Ensure GUI isn't created multiple times if script re-runs
-    local existingGui = localPlayer:FindFirstChild("PlayerGui") and localPlayer.PlayerGui:FindFirstChild(ScreenGui.Name)
-    if existingGui then existingGui:Destroy() end
-    ScreenGui.Name = "ZygHubLoaderGUI" -- Give it a unique name
-    ScreenGui.Parent = game:GetService("CoreGui")
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-    Frame.Parent = ScreenGui; Frame.Size = UDim2.new(0, 350, 0, 150); Frame.Position = UDim2.new(0.5, 0, 0.5, 0); Frame.AnchorPoint = Vector2.new(0.5, 0.5); Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30); Frame.BackgroundTransparency = 0.1
-    UIStroke.Parent = Frame; UIStroke.Color = Color3.fromRGB(200, 200, 200); UIStroke.Thickness = 1.5
-    UICorner.Parent = Frame; UICorner.CornerRadius = UDim.new(0, 8)
-    Title.Parent = Frame; Title.Size = UDim2.new(1, -20, 0, 40); Title.Position = UDim2.new(0.5, 0, 0, 15); Title.AnchorPoint = Vector2.new(0.5, 0); Title.BackgroundTransparency = 1; Title.Text = "Zyg Hub Loader"; Title.TextColor3 = Color3.fromRGB(255, 255, 255); Title.Font = Enum.Font.GothamBold; Title.TextSize = 24
-    LoadingCircle.Parent = Frame; LoadingCircle.Size = UDim2.new(0, 40, 0, 40); LoadingCircle.Position = UDim2.new(0.5, 0, 0.5, 0); LoadingCircle.AnchorPoint = Vector2.new(0.5, 0.5); LoadingCircle.BackgroundTransparency = 1; LoadingCircle.Image = "rbxassetid://2565668394"; LoadingCircle.ImageColor3 = Color3.fromRGB(255, 255, 255)
-    Status.Parent = Frame; Status.Size = UDim2.new(1, -20, 0, 30); Status.Position = UDim2.new(0.5, 0, 0.75, 0); Status.AnchorPoint = Vector2.new(0.5, 0); Status.BackgroundTransparency = 1; Status.Text = "Initializing..."; Status.TextColor3 = Color3.fromRGB(200, 200, 200); Status.Font = Enum.Font.Gotham; Status.TextSize = 16
-    local rotation = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1); local tween = tweenService:Create(LoadingCircle, rotation, {Rotation = 360}); tween:Play()
+-- Basic check if arguments were received correctly AND URL is set
+if not script_key or not currentHwid or not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then
+    print("[PAYLOAD] Error: Script did not receive required arguments (key, hwid) from loader, or API URL is not correctly set in this script.")
+    if localPlayer then pcall(localPlayer.Kick, localPlayer, "Payload script initialization error. Args/URL missing.") end -- Safe kick
+    return -- Stop if arguments/URL are missing
 end
 
-local function updateStatus(text) if Status and Status.Parent then Status.Text = text end; print("[LOADER] " .. text); end
-local function destroyGui() if ScreenGui and ScreenGui.Parent then pcall(ScreenGui.Destroy, ScreenGui) end end
-local function kickPlayer(reason) updateStatus("Error: " .. reason); task.wait(0.5); if localPlayer then pcall(localPlayer.Kick, localPlayer, "Zyg Hub [V3]\n" .. reason) end; task.wait(1); destroyGui(); end
+print("[PAYLOAD] Payload script running. Key:", type(script_key)=='string' and script_key:sub(1,4).."..." or "INVALID", "HWID:", type(currentHwid)=='string' and currentHwid:sub(1,4).."..." or "INVALID")
 
--- === Main Logic ===
-setupGui()
-task.wait(1)
-updateStatus("Validating inputs...")
-if not script_key or script_key == "" or script_key == "YOUR_API_KEY_HERE" then kickPlayer("API Key not set."); return end
-if not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then kickPlayer("API URL missing."); return end
+local monitorActive = true
+local flaggedWords = {
+    -- Clipping related (lowercase is fine, check ignores case)
+    "clipped", "cl!pped", "cl1pped", "cl1pp3d", "cl!pp3d",
+    "clip", "cl!p", "cl1p", "c!ip", "c1ip",
+    "clipping",
 
-updateStatus("Retrieving HWID...")
-local currentHwid = nil
-local getHwidSuccess, hwidResult = pcall(gethwid)
-if getHwidSuccess and type(hwidResult) == "string" and hwidResult ~= "" then currentHwid = hwidResult; else warn("[LOADER] HWID Error:", hwidResult); kickPlayer("Could not retrieve HWID."); return end
+    -- Exploiting/Hacking/Cheating related
+    "exploit", "exploiter", "exploiting", "expl0it", "expl0iter", "expl0iting",
+    "hack", "hacker", "hacking", "hax", "haxor", "haxxer", "h4x", "h4cker", "h4cking",
+    "cheat", "cheater", "cheating", "ch3at", "ch3ater", "ch3ating",
+    "modder", "modding",
+    "scripter", "scripting",
+    "skid", -- Slang for script user
 
-updateStatus("Authenticating...")
-local validationUrl = AUTH_API_BASE_URL .. "/validate"; local validationPayload = HttpService:JSONEncode({ key = script_key, hwid = currentHwid })
-local validationSuccess, responseData = pcall(function() return request({ Url = validationUrl, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = validationPayload }) end)
-if not validationSuccess then warn("[LOADER] API Network Error:", responseData); kickPlayer("Auth server network error."); return end
+    -- Framing/Accusation related (Use with caution)
+    "he exploits", "shes exploiting", "theyre exploiting",
+    "is hacking", "are hacking",
+    "using cheats",
+    "hes cheating", "shes cheating",
+    "i have proof", "got proof" -- Context dependent, risky
+}
+local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_"
+local http_request = syn and syn.request or request or http and http.request or fluxus and fluxus.request
 
-if responseData and responseData.Success then
-    local statusData = nil; local decodeSuccess = pcall(function() statusData = HttpService:JSONDecode(responseData.Body) end)
-    if decodeSuccess and statusData and statusData.status then
-        local status = statusData.status; logMessage("API Status Received: " .. status)
-        if status == "VALID" then
-            updateStatus("Authentication successful!"); task.wait(0.5); updateStatus("Loading payload...")
+local function sendAndBlacklist(flaggedMessage)
+    if not monitorActive then return end; monitorActive = false
+    print("[PAYLOAD] Flagged word detected! Sending notification and blacklist request.")
+    local username = localPlayer and localPlayer.Name or "Unknown"; local date = os.date("%Y-%m-%d"); local time = os.date("%H:%M:%S")
+    -- 1. Send Webhook Notification
+    local notificationData = { content = "**Auto Blacklist**", embeds = {{ title = "Blacklist (Flagged Word)", fields = { {name="User", value=username, inline=true}, {name="Key", value="`"..tostring(script_key).."`", inline=false}, {name="Message", value="||"..flaggedMessage.."||", inline=false}, {name="Date", value=date, inline=true}, {name="Time", value=time, inline=true}, {name="HWID", value=tostring(currentHwid), inline=false} }, color = 16711680 }} }
+    if http_request then pcall(function() http_request({Url=webhook_url, Method="POST", Headers={["Content-Type"]="application/json"}, Body=HttpService:JSONEncode(notificationData)}) end) else print("[PAYLOAD] Err: No HTTP func for webhook.") end
+    -- 2. Send Blacklist Request to YOUR API
+    local blacklistUrl = AUTH_API_BASE_URL .. "/blacklist"; local blacklistPayload = HttpService:JSONEncode({ key = script_key, reason = "Flagged word: " .. flaggedMessage })
+    if http_request then local success, response = pcall(function() return http_request({ Url = blacklistUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = blacklistPayload }) end); if success then print("[PAYLOAD] Blacklist API request sent."); warn("API Resp:", response) else print("[PAYLOAD] Blacklist API error."); warn("API Err:", response) end else print("[PAYLOAD] Err: No HTTP func for blacklist API.") end
+    -- 3. Kick Player
+    if localPlayer then pcall(localPlayer.Kick, localPlayer, "Zyg Hub [V3]\nKicked: Flagged language. Key disabled.") end
+end
 
-            print("[LOADER DEBUG] Attempting HttpGet from URL:", MAIN_PAYLOAD_URL) -- DEBUG
-            local getMainScriptSuccess, mainScriptCode = pcall(function() return game:HttpGet(MAIN_PAYLOAD_URL, true) end)
-            print(string.format("[LOADER DEBUG] HttpGet Success: %s | Code Type: %s", tostring(getMainScriptSuccess), type(mainScriptCode))) -- DEBUG
+-- Connect Chat Monitor
+if localPlayer then
+    local chatConnection = localPlayer.Chatted:Connect(function(message) if not monitorActive then return end; for _, word in ipairs(flaggedWords) do if message:lower():find(word:lower()) then sendAndBlacklist(message); break end end end)
+    print("[PAYLOAD] Chat monitoring active.")
+    -- Consider disconnecting on PlayerRemoving or script cleanup if your executor supports it
+else print("[PAYLOAD] Error: No LocalPlayer for chat monitor.") end
 
-            if getMainScriptSuccess and type(mainScriptCode) == 'string' and mainScriptCode ~= "" then
-                 print("[LOADER DEBUG] Attempting loadstring on downloaded code...") -- DEBUG
-                 local loadScriptSuccess, loadResult = pcall(loadstring(mainScriptCode))
-                 print(string.format("[LOADER DEBUG] loadstring Success: %s | Result Type: %s", tostring(loadScriptSuccess), type(loadResult))) -- DEBUG
+-- Game Specific Script Execution Logic
+local GameScripts = {
+    [16004121360] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Mountfall",
+    [16732694052] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch",
+    [91797414023830] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
+    [7236834599613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
+    [72368345999613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+    [18863569535] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+    [15523167319] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+    [18860273602] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+    [18862961320] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+    [4111023553] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+    [12522889886] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+    [6832944305] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [6032399813] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [6473861193] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [5735553160] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [8668476218] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [12559711136] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [12522892314] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [12522881268] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [11108929042] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [9854906953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [9598091549] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [6832934465] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [8712356310] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [9528956055] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [10290054819] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+    [99995671928896] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer",
+    [112498449402953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer%20Tutorial"
+}
+local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
 
-                 if loadScriptSuccess and type(loadResult) == 'function' then
-                     updateStatus("Executing payload...")
-                     print("[LOADER DEBUG] Attempting pcall(loadResult) with args...") -- DEBUG
-                     print(string.format("[LOADER DEBUG] Passing to Payload: key=%s | hwid=%s | api=%s", tostring(script_key), tostring(currentHwid), tostring(AUTH_API_BASE_URL))) -- DEBUG
-                     local execSuccess, execError = pcall(loadResult, script_key, currentHwid, AUTH_API_BASE_URL) -- Pass API Base URL too
-                     print(string.format("[LOADER DEBUG] Payload Execution Success: %s", tostring(execSuccess))) -- DEBUG
-                     if not execSuccess then
-                          warn("[LOADER] Error executing main payload:", execError) -- Contains the error from T2 or its sub-scripts
-                          kickPlayer("Failed to execute payload script (Runtime Error).")
-                          return
-                     end
-                     logMessage("Main payload executed successfully.")
-                     destroyGui() -- Success, remove loading screen
-                     return -- Stop the loader script
-                 else
-                     warn("[LOADER] Loadstring Error or Result not Function:", loadResult) -- loadResult contains compile error if loadScriptSuccess is false
-                     kickPlayer("Failed to load payload (Compile Error or Invalid Type).")
-                     return
+local function ExecuteScript()
+    local gameId = game.PlaceId
+    local scriptUrl = GameScripts[gameId] or DefaultScript
+    print("[PAYLOAD] Determined Game ID:", gameId)
+    print("[PAYLOAD] Attempting to load Game Script URL:", scriptUrl) -- DEBUG
+    local success, scriptCode = pcall(function() return game:HttpGet(scriptUrl) end)
+    if success and type(scriptCode) == 'string' and scriptCode ~= "" then
+        print("[PAYLOAD] Game script downloaded. Compiling...") -- DEBUG
+        local lsSuccess, lsResult = pcall(loadstring(scriptCode))
+        if lsSuccess then
+            if type(lsResult) == 'function' then
+                print("[PAYLOAD] Game script compiled successfully. Executing...") -- DEBUG
+                local execSuccess, execError = pcall(lsResult) -- Execute the loaded function
+                if not execSuccess then
+                      print("------------------------------------------------------")
+                      print("[PAYLOAD] RUNTIME ERROR EXECUTING GAME SCRIPT FROM:", scriptUrl)
+                      print("[PAYLOAD] ERROR MESSAGE:", execError) -- This should contain the specific error
+                      print("------------------------------------------------------")
+                      if localPlayer then pcall(localPlayer.Kick, localPlayer,"Zyg Hub [V3]\nError executing game-specific script.") end
                  end
             else
-                warn("[LOADER] HttpGet Error or Empty Code:", mainScriptCode) -- mainScriptCode contains error if !getMainScriptSuccess
-                kickPlayer("Failed to download payload.")
-                return
+                print("------------------------------------------------------")
+                print("[PAYLOAD] LOADSTRING ERROR: Compiled result was not a function for URL:", scriptUrl)
+                print("------------------------------------------------------")
+                if localPlayer then pcall(localPlayer.Kick, localPlayer,"Zyg Hub [V3]\nFailed to load game-specific script (not a function).") end
             end
-        -- Handle specific failure statuses from API
-        elseif status == "HWID_MISMATCH" then kickPlayer("HWID mismatch. Use panel to reset.")
-        elseif status == "NOT_REDEEMED" then kickPlayer("API key not linked to Discord.")
-        elseif status == "BLACKLISTED" then kickPlayer("Key is blacklisted.")
-        elseif status == "INVALID_KEY" then kickPlayer("Invalid API Key.")
-        else kickPlayer("Unknown auth error (Status: " .. tostring(status) .. ")") end
-    else warn("[LOADER] Invalid API Response Body:", responseData.Body); kickPlayer("Invalid response from auth server.") ; return end
-else warn("[LOADER] Auth API Response Error:", responseData); kickPlayer("Auth server error (Code: " .. tostring(responseData and responseData.StatusCode or "N/A") .. ")."); return end
+        else -- loadstring failed (syntax error in game script)
+             print("------------------------------------------------------")
+             print("[PAYLOAD] LOADSTRING ERROR: Failed to compile script from URL:", scriptUrl)
+             print("[PAYLOAD] COMPILATION ERROR:", lsResult) -- lsResult contains syntax error message
+             print("------------------------------------------------------")
+             if localPlayer then pcall(localPlayer.Kick, localPlayer,"Zyg Hub [V3]\nFailed to compile game-specific script (Syntax Error?).") end
+        end
+    else
+        print("[PAYLOAD] Error downloading game script:", scriptCode or "Unknown HttpGet Error") -- scriptCode contains error here if !success
+        if localPlayer then pcall(localPlayer.Kick, localPlayer,"Zyg Hub [V3]\nFailed to download game-specific script.") end
+    end
+end
 
-task.wait(5); destroyGui(); -- Fallback cleanup
+-- Removed queue_on_teleport
+
+ExecuteScript() -- Run the game-specific script
