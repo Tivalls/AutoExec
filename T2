@@ -18,11 +18,23 @@ local StarterGui = game:GetService("StarterGui")
 local HttpService = game:GetService("HttpService")
 local localPlayer = Players.LocalPlayer
 
--- Modified check: Only warn, don't return, as debug shows args are likely present
-if not script_key or not currentHwid or not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then
-    warn("[PAYLOAD WARNING] Initial argument/URL check failed, but proceeding anyway based on debug logs. Check values:", script_key, currentHwid, AUTH_API_BASE_URL)
-    -- Do NOT return here anymore
+-- Define AUTH_API_BASE_URL again here.
+-- !! IMPORTANT: Replace this placeholder with your actual Replit URL !!
+local AUTH_API_BASE_URL = baseApiUrlFromLoader or "YOUR_REPLIT_URL_HERE" -- Use passed value or placeholder
+print("[PAYLOAD DEBUG] Using AUTH_API_BASE_URL:", AUTH_API_BASE_URL)
+
+-- Modified check: Only warn, don't return early. Also check placeholder specifically.
+if not script_key or not currentHwid then
+    warn("[PAYLOAD WARNING] Key or HWID argument was nil/false.")
 end
+if not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then
+    warn("[PAYLOAD WARNING] AUTH_API_BASE_URL was nil or still set to placeholder!")
+    -- Consider adding a kick here if the API URL is definitely missing/wrong,
+    -- as subsequent API calls in sendAndBlacklist will fail anyway.
+    -- if localPlayer then localPlayer:Kick("Payload script config error: API URL missing.") end
+    -- return -- Maybe return only if URL is bad? For now, let it continue to see next error.
+end
+print("[PAYLOAD] Passed initial checks (or warnings printed). Continuing execution...")
 
 print("[PAYLOAD] Payload script running. Key:", type(script_key)=='string' and script_key:sub(1,4).."..." or "INVALID", "HWID:", type(currentHwid)=='string' and currentHwid:sub(1,4).."..." or "INVALID")
 
