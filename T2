@@ -1,76 +1,123 @@
-local scriptToQueue = [[
-     local Players = game:GetService("Players")
-     local StarterGui = game:GetService("StarterGui")
-     local HttpService = game:GetService("HttpService")
- 
-     local localPlayer = Players.LocalPlayer
-     local warnings = 0
-     local flaggedWords = {
-        -- Clipping related (lowercase is fine, check ignores case)
-        "clipped", "cl!pped", "cl1pped", "cl1pp3d", "cl!pp3d",
-        "clip", "cl!p", "cl1p", "c!ip", "c1ip",
-        "clipping",
+-- Main Payload Script (T2 - With Chat Monitor & Blacklist Call)
+-- Receives script_key and currentHwid from the loader script
 
-        -- Exploiting/Hacking/Cheating related
-        "exploit", "exploiter", "exploiting", "expl0it", "expl0iter", "expl0iting",
-        "hack", "hacker", "hacking", "hax", "haxor", "haxxer", "h4x", "h4cker", "h4cking",
-        "cheat", "cheater", "cheating", "ch3at", "ch3ater", "ch3ating",
-        "modder", "modding",
-        "scripter", "scripting",
+local script_key, currentHwid = ... -- Arguments passed from the loader script
 
-        -- Framing/Accusation related (Higher risk of false positives)
-        "he exploits", "shes exploiting", "theyre exploiting",
-        "is hacking", "are hacking",
-        "using cheats",
-        "hes cheating", "shes cheating",
-        "i have proof", "got proof" -- Context dependent, risky
- 
-     local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_"
- 
-     local function sendWebhookNotification()
-         local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
-         local username = localPlayer.Name
-         local date = os.date("%Y-%m-%d")
-         local time = os.date("%H:%M:%S")
- 
-         local data = {
-             ["content"] = "**Person Blacklisted**",
-             ["embeds"] = { {
-                 ["title"] = "Blacklist Details",
-                 ["fields"] = {
-                     {["name"] = "Username", ["value"] = username, ["inline"] = true},
-                     {["name"] = "Date", ["value"] = date, ["inline"] = true},
-                     {["name"] = "Time", ["value"] = time, ["inline"] = true},
-                     {["name"] = "HWID", ["value"] = hwid, ["inline"] = false}
-                 },
-                 ["color"] = 1848985
-             } }
-         }
- 
-         local headers = {["Content-Type"] = "application/json"}
-         local http_request = syn and syn.request or request or (http and http.request)
-         if http_request then
-             http_request({Url = webhook_url, Method = "POST", Headers = headers, Body = HttpService:JSONEncode(data)})
-         end
-     end
- 
-     local function monitorChat()
-         localPlayer.Chatted:Connect(function(message)
-             for _, word in ipairs(flaggedWords) do
-                 if message:lower():find(word:lower()) then
-                     sendWebhookNotification()
-                     localPlayer:Kick("You have been blacklisted from Zyg Hub [V3].")
-                     break
-                 end
-             end
-         end)
-     end
- 
-     monitorChat()
- 
-         wait(4)
-     
-     local GameScripts = {
+-- Define AUTH_API_BASE_URL again here or pass as a 3rd argument from loader
+-- Ensure this MATCHES the URL in your loader script
+local AUTH_API_BASE_URL = "YOUR_API_ENDPOINT_BASE_URL_HERE" -- MUST MATCH LOADER
+
+-- Services
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local HttpService = game:GetService("HttpService")
+local localPlayer = Players.LocalPlayer
+
+-- Basic check if arguments were passed correctly
+if not script_key or not currentHwid or not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then
+    print("[PAYLOAD] Error: Loader did not pass required arguments (key, hwid) or API URL is not set.")
+    if localPlayer then localPlayer:Kick("Payload script initialization error.") end
+    return -- Stop if arguments are missing
+end
+
+print("[PAYLOAD] Payload script running. Key:", script_key, "HWID:", currentHwid)
+
+local monitorActive = true
+local flaggedWords = {
+    -- Clipping related
+    "clipped", "cl!pped", "cl1pped", "cl1pp3d", "cl!pp3d", "clip", "cl!p", "cl1p", "c!ip", "c1ip", "clipping",
+    -- Exploiting/Hacking/Cheating related
+    "exploit", "exploiter", "exploiting", "expl0it", "expl0iter", "expl0iting", "hack", "hacker", "hacking",
+    "hax", "haxor", "haxxer", "h4x", "h4cker", "h4cking", "cheat", "cheater", "cheating", "ch3at", "ch3ater", "ch3ating",
+    "modder", "modding", "scripter", "scripting", "skid",
+    -- Framing/Accusation related (Use with caution)
+    "he exploits", "shes exploiting", "theyre exploiting", "is hacking", "are hacking",
+    "using cheats", "hes cheating", "shes cheating", "i have proof", "got proof"
+}
+local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_" -- Your webhook
+
+-- Find a working http request function from common executors
+local http_request = syn and syn.request or request or http and http.request or fluxus and fluxus.request
+
+local function sendAndBlacklist(flaggedMessage)
+    if not monitorActive then return end
+    monitorActive = false -- Prevent multiple triggers
+
+    print("[PAYLOAD] Flagged word detected! Sending notification and blacklist request.")
+
+    local username = localPlayer and localPlayer.Name or "Unknown Player"
+    local date = os.date("%Y-%m-%d")
+    local time = os.date("%H:%M:%S")
+
+    -- 1. Send Webhook Notification
+    local notificationData = {
+        ["content"] = "**Automatic Key Blacklist Triggered**",
+        ["embeds"] = { {
+            ["title"] = "Blacklist Details (Flagged Word)",
+            ["fields"] = {
+                {["name"] = "Username", ["value"] = username, ["inline"] = true},
+                {["name"] = "Used Key", ["value"] = "`"..tostring(script_key).. "`", ["inline"] = false}, -- Use passed script_key
+                {["name"] = "Flagged Message", ["value"] = "||"..flaggedMessage.."||", ["inline"] = false},
+                {["name"] = "Date", ["value"] = date, ["inline"] = true},
+                {["name"] = "Time", ["value"] = time, ["inline"] = true},
+                {["name"] = "HWID", ["value"] = tostring(currentHwid), ["inline"] = false} -- Use passed currentHwid
+            },
+            ["color"] = 16711680 -- Red
+        } }
+    }
+    if http_request then
+        pcall(function()
+            http_request({Url = webhook_url, Method = "POST", Headers = {["Content-Type"]="application/json"}, Body = HttpService:JSONEncode(notificationData)})
+        end)
+    else
+        print("[PAYLOAD] Error: Could not find HTTP request function for webhook.")
+    end
+
+    -- 2. Send Blacklist Request to YOUR API
+    local blacklistUrl = AUTH_API_BASE_URL .. "/blacklist"
+    local blacklistPayload = HttpService:JSONEncode({ key = script_key, reason = "Flagged word detected in chat: " .. flaggedMessage }) -- Use passed script_key
+
+    if http_request then
+        local blacklistSuccess, blacklistResponse = pcall(function()
+            return http_request({
+                Url = blacklistUrl,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = blacklistPayload
+            })
+        end)
+        if blacklistSuccess then print("[PAYLOAD] Blacklist request sent to API.") warn("API Response:", blacklistResponse)
+        else print("[PAYLOAD] Error sending blacklist request to API.") warn("Blacklist API Error:", blacklistResponse) end
+    else
+         print("[PAYLOAD] Error: Could not find HTTP request function for blacklist API.")
+    end
+
+    -- 3. Kick Player
+    if localPlayer then
+        localPlayer:Kick("Zyg Hub [V3]\nKicked for using flagged language. Your key has been blacklisted.")
+    end
+end
+
+-- Connect to the Chatted event
+if localPlayer then
+    local chatConnection = localPlayer.Chatted:Connect(function(message)
+        if not monitorActive then return end
+        for _, word in ipairs(flaggedWords) do
+            if message:lower():find(word:lower()) then
+                sendAndBlacklist(message)
+                break
+            end
+        end
+    end)
+    print("[PAYLOAD] Chat monitoring active.")
+    -- You might want to disconnect this on cleanup: game:GetService("Players").PlayerRemoving:Connect(function(player) if player == localPlayer and chatConnection then chatConnection:Disconnect() end end)
+else
+    print("[PAYLOAD] Error: Could not find LocalPlayer to monitor chat.")
+end
+
+
+-- Game Specific Script Execution Logic --
+local GameScripts = {
      [16004121360] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Mountfall", --Mountfall
  
      [16732694052] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch", --Fisch
@@ -108,21 +155,23 @@ local scriptToQueue = [[
      [99995671928896] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer", --Rune Slayer
      [112498449402953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer%20Tutorial" --Rune Slayer Tutorial
  }
- 
-     local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
- 
-     local function ExecuteScript()
-         local gameId = game.PlaceId
-         local scriptUrl = GameScripts[gameId] or DefaultScript
-         loadstring(game:HttpGet(scriptUrl))()
-     end
- 
-     -- Re-queue the script every time you join a new game
-     queue_on_teleport("loadstring(game:HttpGet(\"https://api.luarmor.net/files/v3/loaders/3341bdf6169ab9afc6d72e68c0634ffa.lua\"))()")
- 
- 
-     ExecuteScript()
- ]]
- 
- queue_on_teleport(scriptToQueue)
- loadstring(scriptToQueue)()
+
+local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
+
+local function ExecuteScript()
+    local gameId = game.PlaceId
+    local scriptUrl = GameScripts[gameId] or DefaultScript
+    local success, scriptCode = pcall(function() return game:HttpGet(scriptUrl) end)
+    if success and scriptCode then
+        local lsSuccess, lsError = pcall(loadstring(scriptCode))
+        if not lsSuccess then
+             print("[PAYLOAD] Error loading game script:", lsError)
+        end
+    else
+        print("[PAYLOAD] Error downloading game script:", scriptCode) -- scriptCode contains error here
+    end
+end
+
+-- Removed the queue_on_teleport call as it seemed out of place / potentially problematic
+
+ExecuteScript() -- Run the game-specific script
