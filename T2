@@ -5,7 +5,7 @@ local script_key, currentHwid = ... -- Arguments passed from the loader script
 
 -- Define AUTH_API_BASE_URL again here or pass as a 3rd argument from loader
 -- Ensure this MATCHES the URL in your loader script
-local AUTH_API_BASE_URL = "YOUR_API_ENDPOINT_BASE_URL_HERE" -- MUST MATCH LOADER
+local AUTH_API_BASE_URL = "https://02a585bf-a727-4778-991e-6c9348a4b9c6-00-rayh4w55yljc.kirk.replit.dev/" -- MUST MATCH LOADER
 
 -- Services
 local Players = game:GetService("Players")
