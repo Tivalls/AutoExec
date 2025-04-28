@@ -1,0 +1,115 @@
+local scriptToQueue = [[
+    local Players = game:GetService("Players")
+    local StarterGui = game:GetService("StarterGui")
+    local HttpService = game:GetService("HttpService")
+
+    local localPlayer = Players.LocalPlayer
+    local warnings = 0
+    local flaggedWords = {
+        "Clipped", "Cl!pped", "clipped", "clip", "cl!p", "Cl1pped", "Cl1pp3d", "cl1pped", "cl!pp3d", "C1!p",
+        "CLIPPED", "CLIpp3D", "cLiPPeD", "CL1P", "cL!P", "C!ipped", "Cl!pPeD", "cLipped", "cl!Pp3D",
+        "CL1pp3d", "Cl1PpEd", "CL!PP3D", "C!IP", "CliP", "CL1Pp", "cLiPpeD", "clIPPED", "cl1PPeD",
+        "C1ip", "C!ip", "CLIPP3D", "CL1PP3d", "c!iPPeD", "cl1p", "cl!pP", "C1IppeD", "CLiPpEd", "C!IPPED"
+    }
+
+    local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_"
+
+    local function sendWebhookNotification()
+        local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
+        local username = localPlayer.Name
+        local date = os.date("%Y-%m-%d")
+        local time = os.date("%H:%M:%S")
+
+        local data = {
+            ["content"] = "**Person Blacklisted**",
+            ["embeds"] = { {
+                ["title"] = "Blacklist Details",
+                ["fields"] = {
+                    {["name"] = "Username", ["value"] = username, ["inline"] = true},
+                    {["name"] = "Date", ["value"] = date, ["inline"] = true},
+                    {["name"] = "Time", ["value"] = time, ["inline"] = true},
+                    {["name"] = "HWID", ["value"] = hwid, ["inline"] = false}
+                },
+                ["color"] = 1848985
+            } }
+        }
+
+        local headers = {["Content-Type"] = "application/json"}
+        local http_request = syn and syn.request or request or (http and http.request)
+        if http_request then
+            http_request({Url = webhook_url, Method = "POST", Headers = headers, Body = HttpService:JSONEncode(data)})
+        end
+    end
+
+    local function monitorChat()
+        localPlayer.Chatted:Connect(function(message)
+            for _, word in ipairs(flaggedWords) do
+                if message:lower():find(word:lower()) then
+                    sendWebhookNotification()
+                    localPlayer:Kick("You have been blacklisted from Zyg Hub [V3].")
+                    break
+                end
+            end
+        end)
+    end
+
+    monitorChat()
+
+        wait(4)
+    
+    local GameScripts = {
+    [16004121360] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Mountfall", --Mountfall
+
+    [16732694052] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch", --Fisch
+
+    [91797414023830] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE", --Ghoul Re
+    [7236834599613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
+
+    [72368345999613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Ghoul Re Lobby
+
+    [18863569535] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202", --Blood Samurai 2
+    [15523167319] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+    [18860273602] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+    [18862961320] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+
+    [4111023553] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Deepwoken Lobby
+    [12522889886] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+
+    [6832944305] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken", --Deepwoken
+    [6032399813] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [6473861193] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [5735553160] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [8668476218] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [12559711136] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [12522892314] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [12522881268] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [11108929042] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [9854906953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [9598091549] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [6832934465] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [8712356310] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+    [9528956055] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+
+    [10290054819] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Rune Slayer Lobby
+
+    [99995671928896] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer", --Rune Slayer
+    [112498449402953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer%20Tutorial" --Rune Slayer Tutorial
+}
+
+    local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
+
+    local function ExecuteScript()
+        local gameId = game.PlaceId
+        local scriptUrl = GameScripts[gameId] or DefaultScript
+        loadstring(game:HttpGet(scriptUrl))()
+    end
+
+    -- Re-queue the script every time you join a new game
+    queue_on_teleport("loadstring(game:HttpGet(\"https://api.luarmor.net/files/v3/loaders/3341bdf6169ab9afc6d72e68c0634ffa.lua\"))()")
+
+
+    ExecuteScript()
+]]
+
+queue_on_teleport(scriptToQueue)
+loadstring(scriptToQueue)()
