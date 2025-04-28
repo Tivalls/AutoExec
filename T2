@@ -3,7 +3,7 @@
 local script_key, currentHwid, baseApiUrlFromLoader = ... -- Arguments passed
 print(string.format("[PAYLOAD DEBUG] Received args: key=%s | hwid=%s | apiUrl=%s", tostring(script_key), tostring(currentHwid), tostring(baseApiUrlFromLoader)))
 
-local AUTH_API_BASE_URL = baseApiUrlFromLoader or "YOUR_API_ENDPOINT_BASE_URL_HERE" -- !! REPLACE PLACEHOLDER !!
+local AUTH_API_BASE_URL = baseApiUrlFromLoader or "https://02a585bf-a727-4778-991e-6c9348a4b9c6-00-rayh4w55yljc.kirk.replit.dev/" -- !! REPLACE PLACEHOLDER !!
 print("[PAYLOAD DEBUG] Using AUTH_API_BASE_URL:", AUTH_API_BASE_URL)
 
 -- Services (Define outside main function for clarity)
@@ -23,7 +23,28 @@ local function T2_Main()
 
     -- Define nested functions or keep them outside
     local monitorActive = true
-    local flaggedWords = { /* ... your full list ... */ }
+    local flaggedWords = {
+                -- Clipping related (lowercase is fine, check ignores case)
+                "clipped", "cl!pped", "cl1pped", "cl1pp3d", "cl!pp3d",
+                "clip", "cl!p", "cl1p", "c!ip", "c1ip",
+                "clipping",
+        
+                -- Exploiting/Hacking/Cheating related
+                "exploit", "exploiter", "exploiting", "expl0it", "expl0iter", "expl0iting",
+                "hack", "hacker", "hacking", "hax", "haxor", "haxxer", "h4x", "h4cker", "h4cking",
+                "cheat", "cheater", "cheating", "ch3at", "ch3ater", "ch3ating",
+                "mod", "modder", "modding", -- (Use with caution, 'mod' can be legit)
+                "script", "scripter", "scripting", -- (Use with caution)
+                "skid", -- Slang for script user
+        
+                -- Framing/Accusation related (Higher risk of false positives)
+                "he exploits", "shes exploiting", "theyre exploiting",
+                "is hacking", "are hacking",
+                "using cheats",
+                "hes cheating", "shes cheating",
+                "i have proof", "got proof" -- Context dependent, risky
+                -- Add more phrases like "[username] exploits", etc. if needed, but simple find() is limited
+            }
     local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_"
     local http_request = syn and syn.request or request or http and http.request or fluxus and fluxus.request
 
@@ -46,7 +67,36 @@ local function T2_Main()
     else print("[PAYLOAD] Error: No LocalPlayer for chat monitor.") end
 
     -- Game Specific Script Execution Logic
-    local GameScripts = { /* ... keep your full table ... */ }
+    local GameScripts = {
+                [16004121360] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Mountfall",
+                [16732694052] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch",
+                [91797414023830] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
+                [7236834599613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
+                [72368345999613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+                [18863569535] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+                [15523167319] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+                [18860273602] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+                [18862961320] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
+                [4111023553] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+                [12522889886] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+                [6832944305] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [6032399813] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [6473861193] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [5735553160] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [8668476218] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [12559711136] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [12522892314] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [12522881268] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [11108929042] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [9854906953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [9598091549] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [6832934465] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [8712356310] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [9528956055] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
+                [10290054819] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+                [99995671928896] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer",
+                [112498449402953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer%20Tutorial"
+            }
     local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
 
     local function ExecuteScript()
