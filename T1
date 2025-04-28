@@ -121,4 +121,4 @@ task.wait(1)
 
 ScreenGui:Destroy()
 
-loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/950eaeee20b34d22c237e229ee822d58.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/T2"))()
