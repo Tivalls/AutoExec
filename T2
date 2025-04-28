@@ -1,115 +1,203 @@
-local scriptToQueue = [[
-    local Players = game:GetService("Players")
-    local StarterGui = game:GetService("StarterGui")
-    local HttpService = game:GetService("HttpService")
+-- Roblox Luau Loader Script (Wave Executor Version - With Chat Monitor & Blacklist Call)
 
-    local localPlayer = Players.LocalPlayer
-    local warnings = 0
-    local flaggedWords = {
-        "Clipped", "Cl!pped", "clipped", "clip", "cl!p", "Cl1pped", "Cl1pp3d", "cl1pped", "cl!pp3d", "C1!p",
-        "CLIPPED", "CLIpp3D", "cLiPPeD", "CL1P", "cL!P", "C!ipped", "Cl!pPeD", "cLipped", "cl!Pp3D",
-        "CL1pp3d", "Cl1PpEd", "CL!PP3D", "C!IP", "CliP", "CL1Pp", "cLiPpeD", "clIPPED", "cl1PPeD",
-        "C1ip", "C!ip", "CLIPP3D", "CL1PP3d", "c!iPPeD", "cl1p", "cl!pP", "C1IppeD", "CLiPpEd", "C!IPPED"
-    }
+--[[ ======================= Configuration ======================= ]]
+local script_key = "YOUR_API_KEY_HERE" -- <-- PASTE YOUR API KEY
+local TARGET_SCRIPT_URL = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
+-- !! NEW !! Base URL for YOUR external API endpoint
+local AUTH_API_BASE_URL = "YOUR_API_ENDPOINT_BASE_URL_HERE" -- e.g., "https://your-function-url.cloudfunctions.net" or your server URL
+--[[ ============================================================= ]]
 
-    local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_"
+-- Services
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui") -- For chat monitoring
+local RunService = game:GetService("RunService") -- For IsStudio check (less relevant for executor)
 
-    local function sendWebhookNotification()
-        local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
-        local username = localPlayer.Name
-        local date = os.date("%Y-%m-%d")
-        local time = os.date("%H:%M:%S")
+-- Function to print messages
+local function logMessage(message)
+    print("[LOADER] " .. message)
+end
 
-        local data = {
-            ["content"] = "**Person Blacklisted**",
-            ["embeds"] = { {
-                ["title"] = "Blacklist Details",
-                ["fields"] = {
-                    {["name"] = "Username", ["value"] = username, ["inline"] = true},
-                    {["name"] = "Date", ["value"] = date, ["inline"] = true},
-                    {["name"] = "Time", ["value"] = time, ["inline"] = true},
-                    {["name"] = "HWID", ["value"] = hwid, ["inline"] = false}
-                },
-                ["color"] = 1848985
-            } }
-        }
+-- Basic Input Validation
+if not script_key or script_key == "" then logMessage("Error: script_key empty.") return end
+if AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then logMessage("Error: Auth API endpoint not configured.") return end
 
-        local headers = {["Content-Type"] = "application/json"}
-        local http_request = syn and syn.request or request or (http and http.request)
-        if http_request then
-            http_request({Url = webhook_url, Method = "POST", Headers = headers, Body = HttpService:JSONEncode(data)})
-        end
-    end
+-- Get HWID (Ensure gethwid() exists in your executor)
+local currentHwid = nil
+local getHwidSuccess, hwidResult = pcall(gethwid)
+if getHwidSuccess and type(hwidResult) == "string" and hwidResult ~= "" then
+    currentHwid = hwidResult
+    logMessage("HWID Retrieved: " .. currentHwid)
+else
+    logMessage("Error retrieving HWID.")
+    warn("[LOADER] HWID Error:", hwidResult)
+    local player = Players.LocalPlayer; if player then player:Kick("Zyg Hub [V3]\nCould not retrieve required HWID.") end
+    return
+end
 
-    local function monitorChat()
-        localPlayer.Chatted:Connect(function(message)
-            for _, word in ipairs(flaggedWords) do
-                if message:lower():find(word:lower()) then
-                    sendWebhookNotification()
-                    localPlayer:Kick("You have been blacklisted from Zyg Hub [V3].")
-                    break
-                end
+logMessage("Attempting authentication via API...")
+
+-- Call YOUR external API for validation AND HWID check
+local validationUrl = AUTH_API_BASE_URL .. "/validate" -- Example validation endpoint path
+local validationPayload = HttpService:JSONEncode({ key = script_key, hwid = currentHwid })
+local validationSuccess, validationResponseData = pcall(function()
+    return request({ -- Wave's request function
+        Url = validationUrl,
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = validationPayload
+    })
+end)
+
+if not validationSuccess then
+    logMessage("Error: Network request to Auth API failed.")
+    warn("[LOADER] Network Error Details:", validationResponseData)
+    local player = Players.LocalPlayer; if player then player:Kick("Zyg Hub [V3]\nAuth server network error.") end
+    return
+end
+
+-- Process Validation Response
+if validationResponseData.Success then
+    local statusData = nil
+    local decodeSuccess = pcall(function() statusData = HttpService:JSONDecode(validationResponseData.Body) end)
+
+    if decodeSuccess and statusData and statusData.status then
+        local status = statusData.status
+
+        if status == "VALID" then
+            logMessage("Authentication successful!")
+
+            -- --- Chat Monitoring & Auto-Blacklist ---
+            local monitorActive = true -- Flag to stop monitoring if needed
+            local flaggedWords = {
+                -- Clipping related (lowercase is fine, check ignores case)
+                "clipped", "cl!pped", "cl1pped", "cl1pp3d", "cl!pp3d",
+                "clip", "cl!p", "cl1p", "c!ip", "c1ip",
+                "clipping",
+        
+                -- Exploiting/Hacking/Cheating related
+                "exploit", "exploiter", "exploiting", "expl0it", "expl0iter", "expl0iting",
+                "hack", "hacker", "hacking", "hax", "haxor", "haxxer", "h4x", "h4cker", "h4cking",
+                "cheat", "cheater", "cheating", "ch3at", "ch3ater", "ch3ating",
+                "mod", "modder", "modding", -- (Use with caution, 'mod' can be legit)
+                "script", "scripter", "scripting", -- (Use with caution)
+                "skid", -- Slang for script user
+        
+                -- Framing/Accusation related (Higher risk of false positives)
+                "he exploits", "shes exploiting", "theyre exploiting",
+                "is hacking", "are hacking",
+                "using cheats",
+                "hes cheating", "shes cheating",
+                "i have proof", "got proof" -- Context dependent, risky
+                -- Add more phrases like "[username] exploits", etc. if needed, but simple find() is limited
+            }
+            local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_" -- Your webhook
+
+            local function sendAndBlacklist(flaggedMessage)
+                if not monitorActive then return end
+                monitorActive = false -- Prevent multiple triggers
+
+                logMessage("Flagged word detected! Sending notification and blacklist request.")
+
+                local localPlayer = Players.LocalPlayer
+                local hwid = currentHwid -- Use HWID already retrieved
+                local username = localPlayer and localPlayer.Name or "Unknown Player"
+                local date = os.date("%Y-%m-%d")
+                local time = os.date("%H:%M:%S")
+
+                -- 1. Send Webhook Notification
+                local notificationData = {
+                     ["content"] = "**Automatic Key Blacklist Triggered**",
+                     ["embeds"] = { {
+                         ["title"] = "Blacklist Details (Flagged Word)",
+                         ["fields"] = {
+                              {["name"] = "Username", ["value"] = username, ["inline"] = true},
+                              {["name"] = "Used Key", ["value"] = "`"..script_key.."`", ["inline"] = false},
+                              {["name"] = "Flagged Message", ["value"] = "||"..flaggedMessage.."||", ["inline"] = false}, -- Use spoiler
+                              {["name"] = "Date", ["value"] = date, ["inline"] = true},
+                              {["name"] = "Time", ["value"] = time, ["inline"] = true},
+                              {["name"] = "HWID", ["value"] = hwid, ["inline"] = false}
+                         },
+                         ["color"] = 16711680 -- Red
+                     } }
+                 }
+                 pcall(function()
+                    request({Url = webhook_url, Method = "POST", Headers = {["Content-Type"]="application/json"}, Body = HttpService:JSONEncode(notificationData)})
+                 end)
+
+                 -- 2. Send Blacklist Request to YOUR API
+                 local blacklistUrl = AUTH_API_BASE_URL .. "/blacklist" -- Example blacklist endpoint
+                 local blacklistPayload = HttpService:JSONEncode({ key = script_key, reason = "Flagged word detected in chat: " .. flaggedMessage })
+
+                 local blacklistSuccess, blacklistResponse = pcall(function()
+                     return request({
+                         Url = blacklistUrl,
+                         Method = "POST",
+                         Headers = {["Content-Type"] = "application/json"},
+                         Body = blacklistPayload
+                     })
+                 end)
+
+                 if blacklistSuccess then
+                      logMessage("Blacklist request sent to API.")
+                      warn("API Response:", blacklistResponse) -- Log API response for debugging
+                 else
+                      logMessage("Error sending blacklist request to API.")
+                      warn("Blacklist API Error:", blacklistResponse)
+                 end
+
+                 -- 3. Kick Player (regardless of API success, kick on detection)
+                 if localPlayer then
+                    localPlayer:Kick("Zyg Hub [V3]\nKicked for using flagged language. Your key has been blacklisted.")
+                 end
             end
-        end)
+
+            -- Connect to the Chatted event
+            local chatConnection = Players.LocalPlayer.Chatted:Connect(function(message)
+                if not monitorActive then return end
+                for _, word in ipairs(flaggedWords) do
+                    if message:lower():find(word:lower()) then
+                        sendAndBlacklist(message) -- Pass the message for context
+                        break -- Stop checking other words once one is found
+                    end
+                end
+            end)
+            logMessage("Chat monitoring active.")
+            -- Optional: Disconnect monitor later if needed: chatConnection:Disconnect()
+
+            -- --- End Chat Monitoring ---
+
+            -- --- Load Main Script ---
+            logMessage("Loading main script...")
+            local getMainScriptSuccess, mainScriptOrError = pcall(function() return game:HttpGet(TARGET_SCRIPT_URL, true) end)
+            if getMainScriptSuccess and mainScriptOrError then
+                 local loadScriptSuccess, loadError = pcall(loadstring(mainScriptOrError))
+                 if loadScriptSuccess then logMessage("Main script executed.")
+                 else logMessage("Error executing main script:"); warn("[LOADER] Loadstring Error:", loadError); local p = Players.LocalPlayer; if p then p:Kick("Zyg Hub [V3]\nScript execution error.") end end
+            else logMessage("Error downloading main script:"); warn("[LOADER] HttpGet Error:", mainScriptOrError); local p = Players.LocalPlayer; if p then p:Kick("Zyg Hub [V3]\nScript download error.") end end
+            -- --- End Load Main Script ---
+
+        elseif status == "HWID_MISMATCH" then
+            logMessage("Authentication failed: HWID Mismatch.")
+            local player = Players.LocalPlayer; if player then player:Kick("Zyg Hub [V3]\nScript access denied, There is a HWID assigned to this script already. If you wish to do so, reset your hwid.") end
+        elseif status == "NOT_REDEEMED" then
+             logMessage("Authentication failed: Key not redeemed.")
+             local player = Players.LocalPlayer; if player then player:Kick("Zyg Hub [V3]\nScript access denied, the api key you have tried to use isnt connected to a discord account.") end
+        elseif status == "BLACKLISTED" then
+             logMessage("Authentication failed: Key blacklisted.")
+             local player = Players.LocalPlayer; if player then player:Kick("Zyg Hub [V3]\nScript access denied: Your key is blacklisted.") end
+        elseif status == "INVALID_KEY" then
+             logMessage("Authentication failed: Invalid Key.")
+             local player = Players.LocalPlayer; if player then player:Kick("Zyg Hub [V3]\nScript access denied: Invalid API Key provided.") end
+        else
+             logMessage("Authentication failed: Unknown status from API: " .. status)
+             local player = Players.LocalPlayer; if player then player:Kick("Zyg Hub [V3]\nUnknown authentication error.") end
+        end
+    else
+        logMessage("Authentication failed: Could not parse response from Auth API.")
+        local player = Players.LocalPlayer; if player then player:Kick("Zyg Hub [V3]\nInvalid response from auth server.") end
     end
-
-    monitorChat()
-
-        wait(4)
-    
-    local GameScripts = {
-    [16004121360] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Mountfall", --Mountfall
-
-    [16732694052] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch", --Fisch
-
-    [91797414023830] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE", --Ghoul Re
-    [7236834599613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
-
-    [72368345999613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Ghoul Re Lobby
-
-    [18863569535] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202", --Blood Samurai 2
-    [15523167319] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
-    [18860273602] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
-    [18862961320] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
-
-    [4111023553] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Deepwoken Lobby
-    [12522889886] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
-
-    [6832944305] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken", --Deepwoken
-    [6032399813] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [6473861193] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [5735553160] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [8668476218] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [12559711136] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [12522892314] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [12522881268] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [11108929042] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [9854906953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [9598091549] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [6832934465] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [8712356310] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [9528956055] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-
-    [10290054819] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", --Rune Slayer Lobby
-
-    [99995671928896] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer", --Rune Slayer
-    [112498449402953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer%20Tutorial" --Rune Slayer Tutorial
-}
-
-    local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
-
-    local function ExecuteScript()
-        local gameId = game.PlaceId
-        local scriptUrl = GameScripts[gameId] or DefaultScript
-        loadstring(game:HttpGet(scriptUrl))()
-    end
-
-    -- Re-queue the script every time you join a new game
-    queue_on_teleport("loadstring(game:HttpGet(\"https://api.luarmor.net/files/v3/loaders/3341bdf6169ab9afc6d72e68c0634ffa.lua\"))()")
-
-
-    ExecuteScript()
-]]
-
-queue_on_teleport(scriptToQueue)
-loadstring(scriptToQueue)()
+else
+    logMessage("Authentication failed: Auth API returned error status code: " .. responseData.StatusCode)
+    local player = Players.LocalPlayer; if player then player:Kick("Zyg Hub [V3]\nAuth server error (Code: " .. responseData.StatusCode .. ").") end
+end
