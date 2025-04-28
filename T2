@@ -1,161 +1,99 @@
--- Main Payload Script (T2 - Added Argument Debugging)
+-- Main Payload Script (T2 - Wrapped in Function)
 
--- Capture arguments passed from the loader script
-local script_key, currentHwid, baseApiUrlFromLoader = ...
--- vvv ADD DEBUG LINES vvv
+local script_key, currentHwid, baseApiUrlFromLoader = ... -- Arguments passed from the loader script
 print(string.format("[PAYLOAD DEBUG] Received args: key=%s | hwid=%s | apiUrl=%s", tostring(script_key), tostring(currentHwid), tostring(baseApiUrlFromLoader)))
--- ^^^ ADD DEBUG LINES ^^^
 
--- Define AUTH_API_BASE_URL again here. USE THE PASSED VALUE IF AVAILABLE.
--- !! IMPORTANT: Replace this placeholder with your actual Replit URL !!
-local AUTH_API_BASE_URL = baseApiUrlFromLoader or "YOUR_API_ENDPOINT_BASE_URL_HERE" -- Prioritize passed, fallback to placeholder
+local AUTH_API_BASE_URL = baseApiUrlFromLoader or "YOUR_API_ENDPOINT_BASE_URL_HERE" -- !! REPLACE PLACEHOLDER !!
 print("[PAYLOAD DEBUG] Using AUTH_API_BASE_URL:", AUTH_API_BASE_URL)
 
-
--- Services
+-- Services (Define outside main function for clarity)
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 local HttpService = game:GetService("HttpService")
 local localPlayer = Players.LocalPlayer
 
--- Define AUTH_API_BASE_URL again here.
--- !! IMPORTANT: Replace this placeholder with your actual Replit URL !!
-local AUTH_API_BASE_URL = baseApiUrlFromLoader or "YOUR_REPLIT_URL_HERE" -- Use passed value or placeholder
-print("[PAYLOAD DEBUG] Using AUTH_API_BASE_URL:", AUTH_API_BASE_URL)
+-- Main function to be returned and executed by the loader
+local function T2_Main()
+    print("[PAYLOAD] T2_Main function executing...") -- Log entry
 
--- Modified check: Only warn, don't return early. Also check placeholder specifically.
-if not script_key or not currentHwid then
-    warn("[PAYLOAD WARNING] Key or HWID argument was nil/false.")
-end
-if not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then
-    warn("[PAYLOAD WARNING] AUTH_API_BASE_URL was nil or still set to placeholder!")
-    -- Consider adding a kick here if the API URL is definitely missing/wrong,
-    -- as subsequent API calls in sendAndBlacklist will fail anyway.
-    -- if localPlayer then localPlayer:Kick("Payload script config error: API URL missing.") end
-    -- return -- Maybe return only if URL is bad? For now, let it continue to see next error.
-end
-print("[PAYLOAD] Passed initial checks (or warnings printed). Continuing execution...")
-
-print("[PAYLOAD] Payload script running. Key:", type(script_key)=='string' and script_key:sub(1,4).."..." or "INVALID", "HWID:", type(currentHwid)=='string' and currentHwid:sub(1,4).."..." or "INVALID")
-
-local monitorActive = true
-local flaggedWords = {
-    -- Clipping related (lowercase is fine, check ignores case)
-    "clipped", "cl!pped", "cl1pped", "cl1pp3d", "cl!pp3d",
-    "clip", "cl!p", "cl1p", "c!ip", "c1ip",
-    "clipping",
-
-    -- Exploiting/Hacking/Cheating related
-    "exploit", "exploiter", "exploiting", "expl0it", "expl0iter", "expl0iting",
-    "hack", "hacker", "hacking", "hax", "haxor", "haxxer", "h4x", "h4cker", "h4cking",
-    "cheat", "cheater", "cheating", "ch3at", "ch3ater", "ch3ating",
-    "modder", "modding",
-    "scripter", "scripting",
-    "skid", -- Slang for script user
-
-    -- Framing/Accusation related (Use with caution)
-    "he exploits", "shes exploiting", "theyre exploiting",
-    "is hacking", "are hacking",
-    "using cheats",
-    "hes cheating", "shes cheating",
-    "i have proof", "got proof" -- Context dependent, risky
-}
-local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_"
-local http_request = syn and syn.request or request or http and http.request or fluxus and fluxus.request
-
-local function sendAndBlacklist(flaggedMessage)
-    if not monitorActive then return end; monitorActive = false
-    print("[PAYLOAD] Flagged word detected! Sending notification and blacklist request.")
-    local username = localPlayer and localPlayer.Name or "Unknown"; local date = os.date("%Y-%m-%d"); local time = os.date("%H:%M:%S")
-    -- 1. Send Webhook Notification
-    local notificationData = { content = "**Auto Blacklist**", embeds = {{ title = "Blacklist (Flagged Word)", fields = { {name="User", value=username, inline=true}, {name="Key", value="`"..tostring(script_key).."`", inline=false}, {name="Message", value="||"..flaggedMessage.."||", inline=false}, {name="Date", value=date, inline=true}, {name="Time", value=time, inline=true}, {name="HWID", value=tostring(currentHwid), inline=false} }, color = 16711680 }} }
-    if http_request then pcall(function() http_request({Url=webhook_url, Method="POST", Headers={["Content-Type"]="application/json"}, Body=HttpService:JSONEncode(notificationData)}) end) else print("[PAYLOAD] Err: No HTTP func for webhook.") end
-    -- 2. Send Blacklist Request to YOUR API
-    local blacklistUrl = AUTH_API_BASE_URL .. "/blacklist"; local blacklistPayload = HttpService:JSONEncode({ key = script_key, reason = "Flagged word: " .. flaggedMessage })
-    if http_request then local success, response = pcall(function() return http_request({ Url = blacklistUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = blacklistPayload }) end); if success then print("[PAYLOAD] Blacklist API request sent."); warn("API Resp:", response) else print("[PAYLOAD] Blacklist API error."); warn("API Err:", response) end else print("[PAYLOAD] Err: No HTTP func for blacklist API.") end
-    -- 3. Kick Player
-    if localPlayer then pcall(localPlayer.Kick, localPlayer, "Zyg Hub [V3]\nKicked: Flagged language. Key disabled.") end
-end
-
--- Connect Chat Monitor
-if localPlayer then
-    local chatConnection = localPlayer.Chatted:Connect(function(message) if not monitorActive then return end; for _, word in ipairs(flaggedWords) do if message:lower():find(word:lower()) then sendAndBlacklist(message); break end end end)
-    print("[PAYLOAD] Chat monitoring active.")
-    -- Consider disconnecting on PlayerRemoving or script cleanup if your executor supports it
-else print("[PAYLOAD] Error: No LocalPlayer for chat monitor.") end
-
--- Game Specific Script Execution Logic
-local GameScripts = {
-    [16004121360] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Mountfall",
-    [16732694052] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch",
-    [91797414023830] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
-    [7236834599613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
-    [72368345999613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
-    [18863569535] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
-    [15523167319] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
-    [18860273602] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
-    [18862961320] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
-    [4111023553] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
-    [12522889886] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
-    [6832944305] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [6032399813] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [6473861193] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [5735553160] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [8668476218] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [12559711136] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [12522892314] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [12522881268] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [11108929042] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [9854906953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [9598091549] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [6832934465] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [8712356310] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [9528956055] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-    [10290054819] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
-    [99995671928896] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer",
-    [112498449402953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer%20Tutorial"
-}
-local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
-
-local function ExecuteScript()
-    local gameId = game.PlaceId
-    local scriptUrl = GameScripts[gameId] or DefaultScript
-    print("[PAYLOAD] Determined Game ID:", gameId)
-    print("[PAYLOAD] Attempting to load Game Script URL:", scriptUrl) -- DEBUG
-    local success, scriptCode = pcall(function() return game:HttpGet(scriptUrl) end)
-    if success and type(scriptCode) == 'string' and scriptCode ~= "" then
-        print("[PAYLOAD] Game script downloaded. Compiling...") -- DEBUG
-        local lsSuccess, lsResult = pcall(loadstring(scriptCode))
-        if lsSuccess then
-            if type(lsResult) == 'function' then
-                print("[PAYLOAD] Game script compiled successfully. Executing...") -- DEBUG
-                local execSuccess, execError = pcall(lsResult) -- Execute the loaded function
-                if not execSuccess then
-                      print("------------------------------------------------------")
-                      print("[PAYLOAD] RUNTIME ERROR EXECUTING GAME SCRIPT FROM:", scriptUrl)
-                      print("[PAYLOAD] ERROR MESSAGE:", execError) -- This should contain the specific error
-                      print("------------------------------------------------------")
-                      if localPlayer then pcall(localPlayer.Kick, localPlayer,"Zyg Hub [V3]\nError executing game-specific script.") end
-                 end
-            else
-                print("------------------------------------------------------")
-                print("[PAYLOAD] LOADSTRING ERROR: Compiled result was not a function for URL:", scriptUrl)
-                print("------------------------------------------------------")
-                if localPlayer then pcall(localPlayer.Kick, localPlayer,"Zyg Hub [V3]\nFailed to load game-specific script (not a function).") end
-            end
-        else -- loadstring failed (syntax error in game script)
-             print("------------------------------------------------------")
-             print("[PAYLOAD] LOADSTRING ERROR: Failed to compile script from URL:", scriptUrl)
-             print("[PAYLOAD] COMPILATION ERROR:", lsResult) -- lsResult contains syntax error message
-             print("------------------------------------------------------")
-             if localPlayer then pcall(localPlayer.Kick, localPlayer,"Zyg Hub [V3]\nFailed to compile game-specific script (Syntax Error?).") end
-        end
-    else
-        print("[PAYLOAD] Error downloading game script:", scriptCode or "Unknown HttpGet Error") -- scriptCode contains error here if !success
-        if localPlayer then pcall(localPlayer.Kick, localPlayer,"Zyg Hub [V3]\nFailed to download game-specific script.") end
+    -- Argument Check (Warn only, do not return from here)
+    if not script_key or not currentHwid then
+        warn("[PAYLOAD WARNING] Key or HWID argument was nil/false.")
     end
+    if not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then
+        warn("[PAYLOAD WARNING] AUTH_API_BASE_URL was nil or still set to placeholder!")
+        -- Cannot proceed without API URL for blacklist function
+        if localPlayer then pcall(localPlayer.Kick, localPlayer,"Payload script config error: API URL missing.") end
+        return
+    end
+    print("[PAYLOAD] Payload script running...")
+
+    -- Define nested functions or keep them outside if they don't rely on T2_Main scope
+    local monitorActive = true
+    local flaggedWords = { /* ... your full list ... */ }
+    local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_"
+    local http_request = syn and syn.request or request or http and http.request or fluxus and fluxus.request
+
+    local function sendAndBlacklist(flaggedMessage)
+         if not monitorActive then return end; monitorActive = false
+         print("[MONITOR] Flagged word detected! Sending notification and blacklist request.")
+         local username = localPlayer and localPlayer.Name or "Unknown"; local date = os.date("%Y-%m-%d"); local time = os.date("%H:%M:%S")
+         -- 1. Send Webhook
+         local notificationData = { content = "**Auto Blacklist**", embeds = {{ title = "Blacklist (Flagged Word)", fields = { {name="User", value=username, inline=true}, {name="Key", value="`"..tostring(script_key).."`", inline=false}, {name="Message", value="||"..flaggedMessage.."||", inline=false}, {name="Date", value=date, inline=true}, {name="Time", value=time, inline=true}, {name="HWID", value=tostring(currentHwid), inline=false} }, color = 16711680 }} }
+         if http_request then pcall(function() http_request({Url=webhook_url, Method="POST", Headers={["Content-Type"]="application/json"}, Body=HttpService:JSONEncode(notificationData)}) end) else print("[MONITOR] Err: No HTTP func for webhook.") end
+         -- 2. Send Blacklist API Request
+         local blacklistUrl = AUTH_API_BASE_URL .. "/blacklist"; local blacklistPayload = HttpService:JSONEncode({ key = script_key, reason = "Flagged word: " .. flaggedMessage })
+         if http_request then local success, response = pcall(function() return http_request({ Url = blacklistUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = blacklistPayload }) end); if success then print("[MONITOR] Blacklist API request sent."); warn("API Resp:", response) else print("[MONITOR] Blacklist API error."); warn("API Err:", response) end else print("[MONITOR] Err: No HTTP func for blacklist API.") end
+         -- 3. Kick Player
+         if localPlayer then pcall(localPlayer.Kick, localPlayer, "Zyg Hub [V3]\nKicked: Flagged language. Key disabled.") end
+    end
+
+    -- Connect Chat Monitor
+    if localPlayer then
+        localPlayer.Chatted:Connect(function(message) if not monitorActive then return end; for _, word in ipairs(flaggedWords) do if message:lower():find(word:lower()) then sendAndBlacklist(message); break end end end)
+        print("[MONITOR] Chat monitoring active.")
+    else print("[PAYLOAD] Error: No LocalPlayer for chat monitor.") end
+
+    -- Game Specific Script Execution Logic
+    local GameScripts = { /* ... keep your full table ... */ }
+    local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev"
+
+    local function ExecuteScript()
+        local gameId = game.PlaceId
+        local scriptUrl = GameScripts[gameId] or DefaultScript
+        print("[EXECUTOR] Determined Game ID:", gameId)
+        print("[EXECUTOR] Attempting to load Game Script URL:", scriptUrl)
+        local success, scriptCode = pcall(function() return game:HttpGet(scriptUrl) end)
+        if success and type(scriptCode) == 'string' and scriptCode ~= "" then
+            print("[EXECUTOR] Game script downloaded. Compiling & Executing...")
+            local lsSuccess, lsResult = pcall(loadstring(scriptCode))
+            if lsSuccess then
+                if type(lsResult) == 'function' then
+                    local execSuccess, execError = pcall(lsResult) -- Execute the loaded function
+                    if not execSuccess then
+                          print("------------------------------------------------------")
+                          print("[EXECUTOR] RUNTIME ERROR EXECUTING GAME SCRIPT FROM:", scriptUrl)
+                          print("[EXECUTOR] ERROR MESSAGE:", execError) -- Should show :159: error here if it persists
+                          print("------------------------------------------------------")
+                          -- Don't kick here, let the main payload finish if possible
+                    else
+                         print("[EXECUTOR] Game script finished execution.")
+                    end
+                else
+                    print("[EXECUTOR] LOADSTRING ERROR: Compiled result was not function:", scriptUrl)
+                end
+            else
+                 print("[EXECUTOR] LOADSTRING ERROR: Failed to compile script:", scriptUrl)
+                 print("[EXECUTOR] COMPILATION ERROR:", lsResult)
+            end
+        else
+            print("[EXECUTOR] Error downloading game script:", scriptCode or "Unknown HttpGet Error")
+        end
+    end
+
+    ExecuteScript() -- Run the game-specific script
+    print("[PAYLOAD] T2_Main function finished.")
 end
 
--- Removed queue_on_teleport
-
-ExecuteScript() -- Run the game-specific script
+-- Return the main function so the loader can call it
+return T2_Main
