@@ -3,14 +3,14 @@
 -- ==================================================
 -- Read the first argument passed by the loader
 local loaderVerified = ... -- <-- Read argument here
-print("Hub Debug (Mountfall): Argument received:", loaderVerified) -- Added Debug Print
+print("Hub Debug (Mountfall): Argument received:", loaderVerified) -- Debug Print
 
 -- Check if the argument was strictly true
 if not (loaderVerified == true) then
-    warn("Mountfall Script Error: Not loaded via authenticated loader. Execution blocked.") -- Updated message slightly
+    warn("Mountfall Script Error: Not loaded via authenticated loader. Execution blocked.") -- Kept specific message
     return -- Stop the script here if the check fails
 end
-print("Hub Debug (Mountfall): Loader verification PASSED.") -- Added Debug Print
+print("Hub Debug (Mountfall): Loader verification PASSED.") -- Debug Print
 -- ==================================================
 -- ==        END LOADER VERIFICATION CHECK         ==
 -- ==================================================
@@ -18,44 +18,54 @@ print("Hub Debug (Mountfall): Loader verification PASSED.") -- Added Debug Print
 ---------------------------------------------------------------------
 -- Wrap your original Mountfall code inside a main function
 local function Script_Main()
-    print("Hub Debug (Mountfall): Script_Main function started.") -- Added Debug Print
+    print("Hub Debug (Mountfall): Script_Main function started.") -- Debug Print
 
-    -- vvv --- Paste ALL of your ORIGINAL Mountfall script code below --- vvv
+    -- vvv --- ALL of your ORIGINAL Mountfall script code goes below --- vvv
 
-    print("Hub Debug (Mountfall): Checking game loaded status...") -- Added Debug Print
+    print("Hub Debug (Mountfall): Checking game loaded status...") -- Debug Print
     if not game:IsLoaded() then
-        print("Hub Debug (Mountfall): Waiting for game load...") -- Added Debug Print
+        print("Hub Debug (Mountfall): Waiting for game load...") -- Debug Print
         game.Loaded:Wait()
-        print("Hub Debug (Mountfall): Game loaded.") -- Added Debug Print
+        print("Hub Debug (Mountfall): Game loaded.") -- Debug Print
     end
 
-    print("Hub Debug (Mountfall): Checking for previous Library...") -- Added Debug Print
+    print("Hub Debug (Mountfall): Checking for previous Library...") -- Debug Print
+    local Library -- Declare Library outside pcall so it's accessible later
     pcall(function()
-        if type(Library) == "table" and Library.Unload then -- Check type before indexing
-             print("Hub Debug (Mountfall): Unloading previous Library...") -- Added Debug Print
-             Library:Unload()
+        if type(getgenv().Library) == "table" and getgenv().Library.Unload then -- Check global env Library specifically
+             print("Hub Debug (Mountfall): Unloading previous Library from _G...") -- Debug Print
+             getgenv().Library:Unload()
         end
     end)
 
     local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 
-    print("Hub Debug (Mountfall): Loading Library...") -- Added Debug Print
-    local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
-    if not Library then print("Hub Debug (Mountfall): LIBRARY FAILED TO LOAD!"); return end -- Added Check
-    local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
-    local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
-    print("Hub Debug (Mountfall): Library loaded. Creating Window...") -- Added Debug Print
+    print("Hub Debug (Mountfall): Loading Library...") -- Debug Print
+    local ThemeManager, SaveManager -- Declare here
+    local libSuccess, libResult = pcall(function()
+        Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
+        ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
+        SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+    end)
 
-    local hwid = game:GetService("RbxAnalyticsService"):GetClientId() -- This is ClientId, not guaranteed unique HWID
+    if not libSuccess or not Library then
+        warn("Hub Debug (Mountfall): LIBRARY FAILED TO LOAD! Error:", libResult) -- Added Check/Error
+        return
+    end
+    if not ThemeManager then warn("Hub Debug (Mountfall): ThemeManager failed to load.") end
+    if not SaveManager then warn("Hub Debug (Mountfall): SaveManager failed to load.") end
+    print("Hub Debug (Mountfall): Library loaded. Creating Window...") -- Debug Print
+
+    local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
 
     local Window = Library:CreateWindow({
-        Title = 'Zyg Hub [V3] Mountfall {' .. hwid:sub(1,6) .. '..}', -- Shortened HWID display
+        Title = 'Zyg Hub [V3] Mountfall {' .. hwid:sub(1,6) .. '..}',
         Center = true,
         AutoShow = true,
         TabPadding = 8,
         MenuFadeTime = 0.2
     })
-    print("Hub Debug (Mountfall): Window created. Explicitly showing...") -- Added Debug Print
+    print("Hub Debug (Mountfall): Window created. Explicitly showing...") -- Debug Print
     Window:Show() -- Explicitly show
 
     local Tabs = {
@@ -63,7 +73,7 @@ local function Script_Main()
         ['ESP'] = Window:AddTab('ESP'),
         ['UI Settings'] = Window:AddTab('UI Settings'),
     }
-    print("Hub Debug (Mountfall): Tabs created.") -- Added Debug Print
+    print("Hub Debug (Mountfall): Tabs created.") -- Debug Print
 
     --QTP (Consider removing if not needed or if it conflicts)
     -- loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/3341bdf6169ab9afc6d72e68c0634ffa.lua"))()
@@ -75,6 +85,8 @@ local function Script_Main()
     local Players = game:GetService("Players")
     local Player = Players.LocalPlayer -- Define Player once
     local UIS = game:GetService('UserInputService') -- Define UIS once
+    local Options = Library.Options -- Shortcut for options table
+    local Toggles = Library.Toggles -- Shortcut for toggles table
 
     -- SpeedHack Section
     do
@@ -124,7 +136,7 @@ local function Script_Main()
     do
         local jumpPowerEnabled = false
         local jumpPowerValue = 50
-        local characterAddedConn, humanoidChangedConn, stateChangedConn_JP
+        local characterAddedConn_JP, stateChangedConn_JP
 
         local function applyJumpPower()
             local character = Player and Player.Character
@@ -141,12 +153,12 @@ local function Script_Main()
             end
         end
 
-        characterAddedConn = Player.CharacterAdded:Connect(setupJumpPower)
+        characterAddedConn_JP = Player.CharacterAdded:Connect(setupJumpPower)
         if Player.Character then setupJumpPower(Player.Character) end
 
         LeftGroupBox:AddToggle('JumpPowerToggle', { Text = 'Jump Power', Default = false, Tooltip = 'Enables custom jump power', Callback = function(Value) jumpPowerEnabled = Value; onJumpPowerChanged() end }):AddKeyPicker('JumpPowerKeybind', { Default = 'H', Mode = 'Toggle', Text = 'Jump Power Keybind', NoUI = false })
         LeftGroupBox:AddSlider('JumpPowerValue', { Text = 'Power', Default = 50, Min = 0, Max = 275, Rounding = 0, Compact = true, Callback = function(Value) jumpPowerValue = Value; onJumpPowerChanged() end })
-        Library:OnUnload(function() jumpPowerEnabled=false; applyJumpPower(); if characterAddedConn then characterAddedConn:Disconnect() end; if stateChangedConn_JP then stateChangedConn_JP:Disconnect() end end)
+        Library:OnUnload(function() jumpPowerEnabled=false; applyJumpPower(); if characterAddedConn_JP then characterAddedConn_JP:Disconnect() end; if stateChangedConn_JP then stateChangedConn_JP:Disconnect() end end)
     end
 
     LeftGroupBox:AddDivider()
@@ -155,7 +167,7 @@ local function Script_Main()
     do
         local Fly = false; local FlySpeed = 200; local Controls = {['w']=0,['a']=0,['s']=0,['d']=0,['space']=0,['leftcontrol']=0}; local flyRenderStepConn, flyInputBeganConn, flyInputEndedConn, flyCharacterAddedConn; local currentBodyPosition
         local function UpdateFly() if not Fly then return end; local char=Player and Player.Character; local hrp=char and char:FindFirstChild("HumanoidRootPart"); local Cam=workspace.CurrentCamera; if hrp and Cam then hrp.Anchored=false; if not currentBodyPosition or not currentBodyPosition.Parent then currentBodyPosition=Instance.new("BodyPosition",hrp); currentBodyPosition.Name="FlyPosition"; currentBodyPosition.MaxForce=Vector3.new(1e6,1e6,1e6); currentBodyPosition.D=100; currentBodyPosition.P=5000 end; local vM=(Controls['space']-Controls['leftcontrol'])*FlySpeed; local dir=((Cam.CFrame.LookVector*(Controls['w']-Controls['s']))+((Cam.CFrame*CFrame.new(-Controls['a']+Controls['d'],0,0).Position)-Cam.CFrame.Position)).Unit*FlySpeed; currentBodyPosition.Velocity = Vector3.new(dir.X, vM, dir.Z) else if currentBodyPosition and currentBodyPosition.Parent then currentBodyPosition:Destroy(); currentBodyPosition = nil end end end
-        local function ToggleFly(v) Fly=v; local char=Player and Player.Character; local hrp=char and char:FindFirstChild("HumanoidRootPart"); if hrp then if not Fly then if currentBodyPosition and currentBodyPosition.Parent then currentBodyPosition:Destroy(); currentBodyPosition=nil end; hrp.Anchored=false end end; if Fly and (not flyRenderStepConn or not flyRenderStepConn.Connected) then flyRenderStepConn=RunService.RenderStepped:Connect(UpdateFly) elseif not Fly and flyRenderStepConn and flyRenderStepConn.Connected then flyRenderStepConn:Disconnect() end end
+        local function ToggleFly(v) Fly=v; local char=Player and Player.Character; local hrp=char and char:FindFirstChild("HumanoidRootPart"); if hrp then if not Fly then if currentBodyPosition and currentBodyPosition.Parent then currentBodyPosition:Destroy(); currentBodyPosition=nil end; hrp.Anchored=false end end; if Fly and (not flyRenderStepConn or not flyRenderStepConn.Connected) then flyRenderStepConn=RunService.RenderStepped:Connect(UpdateFly) elseif not Fly and flyRenderStepConn and flyRenderStepConn.Connected then flyRenderStepConn:Disconnect(); flyRenderStepConn = nil end end
         flyInputBeganConn=UIS.InputBegan:Connect(function(i,gpe)if gpe then return end; local k=i.KeyCode.Name:lower(); if Controls[k]~=nil then Controls[k]=1 end end)
         flyInputEndedConn=UIS.InputEnded:Connect(function(i,gpe)if gpe then return end; local k=i.KeyCode.Name:lower(); if Controls[k]~=nil then Controls[k]=0 end end)
         flyCharacterAddedConn=Player.CharacterAdded:Connect(function(c)if Fly then local hrp=c:WaitForChild("HumanoidRootPart"); if currentBodyPosition and not currentBodyPosition.Parent then currentBodyPosition.Parent=hrp end end end)
@@ -186,17 +198,17 @@ local function Script_Main()
     do
         local InfiniteJumpEnabled=false; local HackedJumpPower=50; local infJumpInputBeganConn
         local function Action(o,f)if o then pcall(f,o)end end
-        local function InfJumpAction(UserInput) if InfiniteJumpEnabled and UserInput.UserInputType==Enum.UserInputType.Keyboard and UserInput.KeyCode==Enum.KeyCode.Space then Action(Player.Character and Player.Character:FindFirstChildOfClass("Humanoid"),function(h)local s=h:GetState();if s==Enum.HumanoidStateType.Jumping or s==Enum.HumanoidStateType.Freefall then Action(h.Parent:FindFirstChild("HumanoidRootPart"),function(hr)hr.Velocity=Vector3.new(hr.Velocity.X,HackedJumpPower,hr.Velocity.Z);h:ChangeState(Enum.HumanoidStateType.Jumping)end)end end)end end
+        local function InfJumpAction(UserInput) if InfiniteJumpEnabled and UserInput.UserInputType==Enum.UserInputType.Keyboard and UserInput.KeyCode==Enum.KeyCode.Space then Action(Player.Character and Player.Character:FindFirstChildOfClass("Humanoid"),function(h)local s=h:GetState();if s==Enum.HumanoidStateType.Jumping or s==Enum.HumanoidStateType.Freefall then Action(h.Parent:FindFirstChild("HumanoidRootPart"),function(hr) HackedJumpPower = Options.JumpPowerValue.Value; hr.Velocity=Vector3.new(hr.Velocity.X,HackedJumpPower,hr.Velocity.Z);h:ChangeState(Enum.HumanoidStateType.Jumping)end)end end)end end -- Read jump power from slider
         infJumpInputBeganConn=UIS.InputBegan:Connect(InfJumpAction)
         LeftGroupBox:AddToggle('InfJumpToggle',{Text='Infinite Jump',Default=false,Tooltip='Allows you to jump infinitely',Callback=function(V)InfiniteJumpEnabled=V end}):AddKeyPicker('InfJumpKeybind',{Default='J',Mode='Toggle',Text='Infinite Jump Keybind',NoUI=false})
-        -- Uses HackedJumpPower from the main JumpPower section, add separate slider if needed.
         Library:OnUnload(function()if infJumpInputBeganConn then infJumpInputBeganConn:Disconnect()end end)
     end
 
     -- Chat Logger Section (Consistent)
     do
-        local chatLogActive=false; local chatLogThread=nil; local function StartChatLogger() if chatLogThread then return end; chatLogActive=true; chatLogThread=task.spawn(function() local l,d,s,s2,u,c,mL={},Drawing.new("Text"),Drawing.new("Square"),Drawing.new("Square"),Instance.new("BindableEvent"),{},17; d.Visible,s.Visible,s2.Visible=false,false,false; local function iS(S) return type(S)=='string'and(S:match('^%s+$')~=nil or #S==0)end; local function aL(p,m)if iS(m)or not chatLogActive then return end;local f,n=p:GetAttribute('FirstName')or"",p:GetAttribute('LastName')or"";local fM=string.format("%s %s (%s): %s",f,n,p.Name,m);table.insert(l,fM);if #l>mL then table.remove(l,1)end;u:Fire()end; local function sP(p)if c[p]then c[p]:Disconnect()end;c[p]=p.Chatted:Connect(function(m)aL(p,m)end)end; for _,p in ipairs(Players:GetPlayers())do sP(p)end; c.PA=Players.PlayerAdded:Connect(sP); c.PR=Players.PlayerRemoving:Connect(function(p)if c[p]then c[p]:Disconnect();c[p]=nil end end); while chatLogActive do local B=table.concat(l,"\n"); local vS=workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(800,600);s.Size=Vector2.new(math.min(500,vS.X-50),math.min(300,vS.Y-50));s2.Size=s.Size+Vector2.new(4,4);s.Position=Vector2.new(vS.X-s.Size.X-15,vS.Y-s.Size.Y-15);s2.Position=s.Position-Vector2.new(2,2);s2.Transparency,s2.Visible,s2.Filled,s2.Thickness,s2.Color,s2.ZIndex=1,true,false,1,Color3.new(.8,.8,.8),1;s.Transparency,s.Visible,s.Filled,s.Color,s.ZIndex=0.6,true,true,Color3.new(.1,.1,.1),0;d.Position=s.Position+Vector2.new(5,5);d.Size,d.Text,d.Outline,d.Color,d.OutlineColor,d.Transparency,d.Visible,d.ZIndex,d.Font=14,B,true,Color3.new(1,1,1),Color3.new(0,0,0),1,true,2,2;local _,tO=u.Event:Wait(0.5);if not chatLogActive then break end end; d:Remove();s:Remove();s2:Remove();u:Destroy();for _,cn in pairs(c)do if cn and cn.Connected then cn:Disconnect()end end;chatLogThread=nil;chatLogActive=false end) end
-        local function StopChatLogger() chatLogActive=false end
+        local chatLogActive=false; local chatLogThread=nil; local chatLogConnections={} -- Store connections here
+        local function StartChatLogger() if chatLogThread or chatLogActive then return end; chatLogActive=true; chatLogThread=task.spawn(function() local l,d,s,s2,u,c,mL={},Drawing.new("Text"),Drawing.new("Square"),Drawing.new("Square"),Instance.new("BindableEvent"),{},17; d.Visible,s.Visible,s2.Visible=false,false,false; local function iS(S) return type(S)=='string'and(S:match('^%s+$')~=nil or #S==0)end; local function aL(p,m)if iS(m)or not chatLogActive then return end;local f,n=p:GetAttribute('FirstName')or"",p:GetAttribute('LastName')or"";local fM=string.format("%s %s (%s): %s",f,n,p.Name,m);table.insert(l,fM);if #l>mL then table.remove(l,1)end;u:Fire()end; local function sP(p)if c[p]then c[p]:Disconnect()end;c[p]=p.Chatted:Connect(function(m)aL(p,m)end)end; for _,p in ipairs(Players:GetPlayers())do sP(p)end; c.PA=Players.PlayerAdded:Connect(sP); c.PR=Players.PlayerRemoving:Connect(function(p)if c[p]then c[p]:Disconnect();c[p]=nil end end); chatLogConnections=c; local last_updatefire=tick(); local stepConn = RunService.Stepped:Connect(function() if not chatLogActive then return end; if (tick()-last_updatefire)>1/10 then last_updatefire=tick(); u:Fire() end end); while chatLogActive do local B=table.concat(l,"\n"); local vS=workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(800,600);s.Size=Vector2.new(math.min(500,vS.X-50),math.min(300,vS.Y-50));s2.Size=s.Size+Vector2.new(4,4);s.Position=Vector2.new(vS.X-s.Size.X-15,vS.Y-s.Size.Y-15);s2.Position=s.Position-Vector2.new(2,2);s2.Transparency,s2.Visible,s2.Filled,s2.Thickness,s2.Color,s2.ZIndex=1,true,false,1,Color3.new(.8,.8,.8),1;s.Transparency,s.Visible,s.Filled,s.Color,s.ZIndex=0.6,true,true,Color3.new(.1,.1,.1),0;d.Position=s.Position+Vector2.new(5,5);d.Size,d.Text,d.Outline,d.Color,d.OutlineColor,d.Transparency,d.Visible,d.ZIndex,d.Font=14,B,true,Color3.new(1,1,1),Color3.new(0,0,0),1,true,2,2;local _,tO=u.Event:Wait(0.5);if not chatLogActive then break end end; d:Remove();s:Remove();s2:Remove();u:Destroy();if stepConn and stepConn.Connected then stepConn:Disconnect() end; for _,cn in pairs(chatLogConnections)do if cn and cn.Connected then cn:Disconnect()end end;chatLogThread=nil;chatLogConnections={} end) end
+        local function StopChatLogger() chatLogActive=false end -- Signal the loop to stop
         LeftGroupBox:AddToggle('ChatLogger',{Text='Chat Logger',Default=false,Tooltip='Shows chat history overlay',Callback=function(V)if V then StartChatLogger()else StopChatLogger()end end})
         Library:OnUnload(StopChatLogger)
     end
@@ -215,7 +227,7 @@ local function Script_Main()
         local function removeSinglePlayerESP(p) if p and p.Character then local h=p.Character:FindFirstChild("Head"); local g=h and h:FindFirstChild("MountfallPlayerESP"); if g then g:Destroy() end end end
         local function updateAllPlayerESP() if not playerESPEnabled then return end; for _,p in ipairs(Players:GetPlayers()) do updateSinglePlayerESP(p) end end
         local function cleanupPlayerESP(p) removeSinglePlayerESP(p); if characterAddedConns_PESP[p] then characterAddedConns_PESP[p]:Disconnect(); characterAddedConns_PESP[p]=nil end end
-        local function setupPlayerESP(p) cleanupPlayerESP(p); characterAddedConns_PESP[p]=p.CharacterAdded:Connect(function(c) local head=c:WaitForChild("Head"); local hum=c:WaitForChild("Humanoid"); task.wait(0.1); updateSinglePlayerESP(p); local hc=hum.HealthChanged:Connect(function()updateSinglePlayerESP(p)end); c.AncestryChanged:Connect(function(_,pa)if not pa then hc:Disconnect()end end) end); if p.Character then updateSinglePlayerESP(p); local hum=p.Character:FindFirstChildOfClass("Humanoid"); if hum then local hc=hum.HealthChanged:Connect(function()updateSinglePlayerESP(p)end); p.Character.AncestryChanged:Connect(function(_,pa)if not pa then hc:Disconnect()end end)end end end
+        local function setupPlayerESP(p) cleanupPlayerESP(p); characterAddedConns_PESP[p]=p.CharacterAdded:Connect(function(c) local head=c:WaitForChild("Head"); local hum=c:WaitForChild("Humanoid"); task.wait(0.1); updateSinglePlayerESP(p); local hc=hum.HealthChanged:Connect(function()updateSinglePlayerESP(p)end); local diedConn = hum.Died:Connect(function() if hc and hc.Connected then hc:Disconnect() end end); c.AncestryChanged:Connect(function(_,pa)if not pa then if hc and hc.Connected then hc:Disconnect() end; if diedConn and diedConn.Connected then diedConn:Disconnect() end end end) end); if p.Character then updateSinglePlayerESP(p); local hum=p.Character:FindFirstChildOfClass("Humanoid"); if hum then local hc=hum.HealthChanged:Connect(function()updateSinglePlayerESP(p)end); local diedConn = hum.Died:Connect(function() if hc and hc.Connected then hc:Disconnect() end end); p.Character.AncestryChanged:Connect(function(_,pa)if not pa then if hc and hc.Connected then hc:Disconnect() end; if diedConn and diedConn.Connected then diedConn:Disconnect() end end end)end end end
         local function TogglePlayerESP(v) playerESPEnabled=v; if playerESPEnabled then if not espUpdateConn or not espUpdateConn.Connected then espUpdateConn=RunService.Heartbeat:Connect(updateAllPlayerESP)end; if not playerAddedConn_PESP or not playerAddedConn_PESP.Connected then playerAddedConn_PESP=Players.PlayerAdded:Connect(setupPlayerESP)end; if not playerRemovingConn_PESP or not playerRemovingConn_PESP.Connected then playerRemovingConn_PESP=Players.PlayerRemoving:Connect(cleanupPlayerESP)end; for _,p in ipairs(Players:GetPlayers())do setupPlayerESP(p)end else if espUpdateConn then espUpdateConn:Disconnect();espUpdateConn=nil end; if playerAddedConn_PESP then playerAddedConn_PESP:Disconnect();playerAddedConn_PESP=nil end; if playerRemovingConn_PESP then playerRemovingConn_PESP:Disconnect();playerRemovingConn_PESP=nil end; for _,p in ipairs(Players:GetPlayers())do cleanupPlayerESP(p)end; characterAddedConns_PESP={} end end
         LeftESPGroupBox:AddToggle('PlayerESP', { Text = 'Players', Default = false, Callback = TogglePlayerESP })
         Library:OnUnload(function() TogglePlayerESP(false) end)
@@ -259,7 +271,7 @@ local function Script_Main()
         local groupId = 15971772 -- Mountfall Group ID? Verify this is correct
         local modJoinLeaveConns={}; local modJoinNotifyEnabled=true -- Assume enabled by default? Add toggle if needed
         local function playSound(id)pcall(function()local s=Instance.new("Sound",workspace);s.SoundId="rbxassetid://"..id;s.Volume=5;s:Play();game.Debris:AddItem(s,5)end)end
-        local function checkPlayer(p) if p==Player then return end; task.spawn(function() local s,inG=pcall(p.IsInGroup,p,groupId); if s and inG then if modJoinNotifyEnabled then Library:Notify(p.Name .. " (Moderator) has joined!",15,"Warning"); playSound("134569069127046") end; if modJoinLeaveConns[p] then modJoinLeaveConns[p]:Disconnect() end; modJoinLeaveConns[p]=p.AncestryChanged:Connect(function(_,parent) if not parent then if modJoinNotifyEnabled then Library:Notify(p.Name .. " (Moderator) has left!",15,"Info"); playSound("126849058770164") end; if modJoinLeaveConns[p] then modJoinLeaveConns[p]:Disconnect() end; modJoinLeaveConns[p]=nil end end) end end) end
+        local function checkPlayer(p) if p==Player then return end; task.spawn(function() local s,inG=pcall(p.IsInGroup,p,groupId); if s and inG then if modJoinNotifyEnabled then Library:Notify(p.Name .. " (Moderator) has joined!",15,"Warning"); playSound("134569069127046") end; if modJoinLeaveConns[p] then modJoinLeaveConns[p]:Disconnect() end; modJoinLeaveConns[p]=p.AncestryChanged:Connect(function(_,parent) if not parent then if modJoinNotifyEnabled then Library:Notify(p.Name .. " (Moderator) has left!",15,"Info"); playSound("126849058770164") end; if modJoinLeaveConns[p] then modJoinLeaveConns[p]:Disconnect(); modJoinLeaveConns[p]=nil end end end) end end) end
         local playerAddedConn_MJ=Players.PlayerAdded:Connect(checkPlayer)
         local playerRemovingConn_MJ=Players.PlayerRemoving:Connect(function(p)if modJoinLeaveConns[p]then modJoinLeaveConns[p]:Disconnect();modJoinLeaveConns[p]=nil end end)
         for _,p in ipairs(Players:GetPlayers())do checkPlayer(p)end
@@ -276,18 +288,18 @@ local function Script_Main()
     SetupKeybind('NoClipKeybind','NoClipToggle')
     SetupKeybind('FlyKeybind','FlyToggle')
     SetupKeybind('InfJumpKeybind','InfJumpToggle')
-    SetupKeybind('AnchorKeybind','Anchor Body/Torso') -- Assuming this toggle exists
+    -- SetupKeybind('AnchorKeybind','Anchor Body/Torso') -- No anchor toggle found in this script
 
-    print("Hub Debug (Mountfall): Script_Main function definition ending.") -- Added Debug Print
+    print("Hub Debug (Mountfall): Script_Main function definition ending.") -- Debug Print
     -- ^^^ --- End of ORIGINAL Mountfall script code --- ^^^
 end
 ---------------------------------------------------------------------
 
-print("Hub Debug (Mountfall): Attempting pcall(Script_Main)...") -- Added Debug Print
+print("Hub Debug (Mountfall): Attempting pcall(Script_Main)...") -- Debug Print
 local success, err = pcall(Script_Main)
-print("Hub Debug (Mountfall): pcall(Script_Main) finished. Success:", success) -- Added Debug Print
+print("Hub Debug (Mountfall): pcall(Script_Main) finished. Success:", success) -- Debug Print
 if not success then
-    warn("Mountfall Script encountered an error during Script_Main execution:", err) -- Changed
+    warn("Mountfall Script encountered an error during Script_Main execution:", err) -- Changed warn message
     pcall(function() if Library and Library.Notify then Library:Notify("Script Error: " .. tostring(err), 10, "Error") end end)
 end
-print("Hub Debug (Mountfall): End of script file reached.") -- Added Debug Print
+print("Hub Debug (Mountfall): End of script file reached.") -- Debug Print
