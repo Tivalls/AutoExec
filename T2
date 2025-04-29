@@ -8,14 +8,12 @@ local HttpService = game:GetService("HttpService")
 local localPlayer = Players.LocalPlayer
 
 local function T2_Main()
-    print("T2 Debug: T2_Main started.") -- Debug Print
-
     -- Basic checks for arguments (optional but good practice)
     if not script_key or not currentHwid then
-         warn("T2 Warning: Missing script_key or currentHwid.")
+         -- warn("T2 Warning: Missing script_key or currentHwid.")
     end
     if not AUTH_API_BASE_URL or AUTH_API_BASE_URL == "YOUR_API_ENDPOINT_BASE_URL_HERE" then
-         warn("T2 Warning: Missing or default AUTH_API_BASE_URL.")
+         -- warn("T2 Warning: Missing or default AUTH_API_BASE_URL.")
     end
 
     -- Chat Monitor Setup
@@ -55,7 +53,6 @@ local function T2_Main()
 
     -- Connect chat monitor
     if localPlayer then
-        print("T2 Debug: Setting up chat monitor.") -- Debug Print
         local chatConn = localPlayer.Chatted:Connect(function(message)
             if not monitorActive then return end;
             for _, word in ipairs(flaggedWords) do
@@ -65,8 +62,6 @@ local function T2_Main()
                 end
             end
         end)
-        -- Optional: Disconnect chat monitor if T2 is unloaded or stopped somehow (depends on loader)
-        -- game:GetService("Players").LocalPlayer.OnTeleport:Connect(function() if chatConn then chatConn:Disconnect() end end) -- Example disconnect on teleport
     end
 
     -- Script Loading Setup
@@ -75,13 +70,10 @@ local function T2_Main()
         [16732694052] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Fisch",
         [91797414023830] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
         [7236834599613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Ghoul%20RE",
-        [72368345999613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", -- Commented out Lobby
         [18863569535] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
         [15523167319] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
         [18860273602] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
         [18862961320] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blood%20Samurai%202",
-        [4111023553] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", -- Commented out Lobby
-        [12522889886] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", -- Commented out Lobby
         [6832944305] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
         [6032399813] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
         [6473861193] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
@@ -96,49 +88,44 @@ local function T2_Main()
         [6832934465] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
         [8712356310] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
         [9528956055] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Deepwoken",
-        [10290054819] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", -- Commented out Lobby
         [99995671928896] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer",
         [112498449402953] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Rune%20Slayer%20Tutorial",
-        [16893821047] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification", -- Commented out Lobby
         [16992122108] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Blue%20Heater%202",
+        [72368345999613] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+        [4111023553] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+        [12522889886] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+        [10290054819] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
+        [16893821047] = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Lobby%20Notification",
     }
     local DefaultScript = "https://raw.githubusercontent.com/Tivalls/AutoExec/refs/heads/main/Dev" -- Fallback script
 
     local function ExecuteScript()
         local gameId = game.PlaceId
         local scriptUrl = GameScripts[gameId] or DefaultScript
-        print("T2 Debug: Determined script URL:", scriptUrl) -- Debug Print
         local success, scriptCode = pcall(function() return game:HttpGet(scriptUrl, true) end) -- Add true to try avoiding cache
 
         if success and type(scriptCode) == 'string' and scriptCode ~= "" then
-            print("T2 Debug: Script code downloaded successfully.") -- Debug Print
             local lsSuccess, lsResult = pcall(loadstring(scriptCode))
             if lsSuccess then
-                print("T2 Debug: Script compiled successfully (loadstring).") -- Debug Print
                 if type(lsResult) == 'function' then
-                    print("T2 Debug: Compiled result is a function. Attempting execution...") -- Debug Print
-
-                    -- Execute the loaded script safely and PASS 'true' as an argument
-                    local execSuccess, execError = pcall(lsResult, true) -- <-- Pass true here
-                    print("T2 Debug: pcall(lsResult, true) finished. Success:", execSuccess) -- Debug Print
+                    -- Execute the loaded script safely WITHOUT passing any extra arguments
+                    local execSuccess, execError = pcall(lsResult) -- <-- Reverted: No argument passed
                     if not execSuccess then
-                        warn("T2 Explicit Error executing loaded script ("..scriptUrl.."):", execError) -- Changed warn message
+                         warn("Error executing loaded script ("..scriptUrl.."):", execError)
                     end
                 else
-                    warn("T2 Debug: Loaded script code did not return a function:", scriptUrl) -- Changed warn message
+                    warn("Loaded script code did not return a function:", scriptUrl)
                 end
             else
-                warn("T2 Debug: Error compiling script code from", scriptUrl, ":", lsResult) -- Changed warn message
+                warn("Error compiling script code from", scriptUrl, ":", lsResult)
             end
         else
-            warn("T2 Debug: Failed to fetch script code from", scriptUrl, ":", scriptCode) -- Changed warn message
+            warn("Failed to fetch script code from", scriptUrl, ":", scriptCode)
         end
-        print("T2 Debug: ExecuteScript function finished.") -- Debug Print
     end
 
     -- Execute the appropriate script
     ExecuteScript()
-    print("T2 Debug: T2_Main finished.") -- Debug Print
 end
 
 -- Return the main function for the loader to call
