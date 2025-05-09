@@ -1,0 +1,132 @@
+--[[
+    ESP Holder Script (v3 - Removed unwanted ESP types & prints)
+    Hosted and loaded via loadstring(game:HttpGet(...))()
+    Returns a table of functions to control ESPs.
+]]
+
+local Holder = {}
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService") -- For global click if needed
+
+--// Global ESP Settings (Defaults) \\--
+Holder.GlobalESPEnabled = true
+Holder.GlobalMaxDistance = 500 -- Default global max distance for all ESPs
+-- Holder.Is2DESPMode = false -- REMOVED 2D ESP
+
+--// Global Control Functions \\--
+Holder.SetGlobalESPEnable = function(value)
+    Holder.GlobalESPEnabled = value
+    -- Trigger a refresh/re-evaluation for all active ESPs
+    for key, module in pairs(Holder) do
+        if type(module) == "table" and module.Toggle and type(module.IsEnabled) == "function" then
+            module.Toggle(module.IsEnabled()) -- Re-call toggle to apply global state
+        elseif key == "TogglePlayerESP" and Holder.PlayerESPState then
+             Holder.TogglePlayerESP(Holder.PlayerESPState.isEnabled)
+        elseif key == "ToggleMobESP" and getgenv().MobESPInitialized then
+             Holder.ToggleMobESP(getgenv().MobESPEnabledState) -- Use state var
+        end
+    end
+end
+
+Holder.SetGlobalMaxDistance = function(value)
+    Holder.GlobalMaxDistance = tonumber(value) or 500
+    -- Individual ESPs will read this in their RenderStepped
+end
+
+-- REMOVED Set2DESPMode function
+
+-- Player ESP Module
+do
+    Holder.PlayerESPState = { isEnabled = false, showTeam = false }
+    local heartbeatConnection = nil
+    local playerGuis = {}
+
+    local function cleanupAllPlayerESP()
+        if heartbeatConnection then heartbeatConnection:Disconnect(); heartbeatConnection = nil; end
+        for p, gui in pairs(playerGuis) do if gui and gui.Parent then gui:Destroy() end end
+        playerGuis = {}
+        for _, player in ipairs(Players:GetPlayers()) do if player.Character and player.Character:FindFirstChild("Head") then local oldGui = player.Character.Head:FindFirstChild("TadachiisESPTags_Holder_V2"); if oldGui then oldGui:Destroy() end end end
+    end
+
+    local function updatePlayerESP()
+        if not Holder.PlayerESPState.isEnabled or not Holder.GlobalESPEnabled then return end
+        local localPlayer = Players.LocalPlayer; local localCharacter = localPlayer and localPlayer.Character; if not localCharacter or not localCharacter:FindFirstChild("Head") then return end
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                local head = player.Character.Head; local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                if not humanoid then if playerGuis[player] then playerGuis[player]:Destroy(); playerGuis[player] = nil; end continue end
+                local distance = (localCharacter.Head.Position - head.Position).Magnitude
+                if distance > Holder.GlobalMaxDistance then if playerGuis[player] then playerGuis[player].Enabled = false; end; continue; end
+                local currentHealth = math.floor(humanoid.Health); local maxHealth = math.floor(humanoid.MaxHealth)
+                local billboardGui = playerGuis[player] or head:FindFirstChild("TadachiisESPTags_Holder_V2")
+                if not billboardGui then billboardGui = Instance.new("BillboardGui"); billboardGui.Name = "TadachiisESPTags_Holder_V2"; billboardGui.Adornee = head; billboardGui.Size = UDim2.new(0, 120, 0, 60); billboardGui.StudsOffset = Vector3.new(0, 2.7, 0); billboardGui.AlwaysOnTop = true; billboardGui.LightInfluence = 0; billboardGui.Parent = head; playerGuis[player] = billboardGui; local textLabel = Instance.new("TextLabel"); textLabel.Name = "NameLabel"; textLabel.Size = UDim2.new(1, 0, 1, 0); textLabel.BackgroundTransparency = 1; textLabel.Font = Enum.Font.SourceSansSemibold; textLabel.TextScaled = false; textLabel.TextSize = 14; textLabel.TextStrokeColor3 = Color3.new(0,0,0); textLabel.TextStrokeTransparency = 0.5; textLabel.Parent = billboardGui end
+                billboardGui.Enabled = Holder.PlayerESPState.isEnabled and Holder.GlobalESPEnabled; local nameLabel = billboardGui:FindFirstChild("NameLabel")
+                if nameLabel then local teamColor = player.Team and player.Team.TeamColor.Color or Color3.new(1, 0.2, 0.2); nameLabel.TextColor3 = Holder.PlayerESPState.showTeam and teamColor or Color3.new(1, 0.2, 0.2); local teamText = Holder.PlayerESPState.showTeam and (player.Team and " ["..player.Team.Name.."]" or "") or ""; nameLabel.Text = player.Name .. teamText .. "\n" .. math.floor(distance) .. "m\nHP: " .. currentHealth .. "/" .. maxHealth end
+            else if playerGuis[player] then playerGuis[player]:Destroy(); playerGuis[player] = nil; end end
+        end
+    end
+
+    Holder.TogglePlayerESP = function(value) Holder.PlayerESPState.isEnabled = value; if Holder.PlayerESPState.isEnabled and Holder.GlobalESPEnabled then if not heartbeatConnection or not heartbeatConnection.Connected then heartbeatConnection = RunService.Heartbeat:Connect(updatePlayerESP) end; updatePlayerESP() else for p, gui in pairs(playerGuis) do if gui and gui.Parent then gui.Enabled = false; end end; if not Holder.PlayerESPState.isEnabled then cleanupAllPlayerESP() end end end
+    Holder.SetPlayerESPShowTeam = function(value) Holder.PlayerESPState.showTeam = value; if Holder.PlayerESPState.isEnabled and Holder.GlobalESPEnabled then updatePlayerESP(); end end
+    Holder.CleanupPlayerESP = cleanupAllPlayerESP
+end
+
+
+-- Mob ESP Module (Syn Drawing based)
+do
+    getgenv().MobESPEnabledState = getgenv().MobESPEnabledState == nil and false or getgenv().MobESPEnabledState
+    getgenv().MobESPInitialized = getgenv().MobESPInitialized == nil and false or getgenv().MobESPInitialized
+
+    local function initializeMobESP()
+        if getgenv().MobESPInitialized then return end
+        local s_init, err_init = pcall(function()
+            function getgenv().synTextLabel_MobESP() local TextLabel = Drawing.new("Text"); if not getgenv().Syn_Drawing_MobESP then getgenv().Syn_Drawing_MobESP = {} end; table.insert(getgenv().Syn_Drawing_MobESP, TextLabel); TextLabel.Text = "Placeholder"; TextLabel.Size = 18; TextLabel.Center = true; TextLabel.Outline = true; TextLabel.Color = Color3.new(1, 0, 0); TextLabel.OutlineColor = Color3.new(0, 0, 0); return TextLabel end
+            function getgenv().worldpoint_to_viewpoint_MobESP(pos_cframe) local cam = workspace.CurrentCamera; if not cam then return {Vector2.new(), false} end; local pos_vec3, in_fov = cam:WorldToViewportPoint(pos_cframe.Position); return {Vector2.new(pos_vec3.X, pos_vec3.Y), in_fov} end
+            getgenv().textlabels_Line1_MobESP = getgenv().textlabels_Line1_MobESP or {}; getgenv().textlabels_Line2_MobESP = getgenv().textlabels_Line2_MobESP or {}; getgenv().Events_MobESP = getgenv().Events_MobESP or {}; getgenv().Lock_Create_MobESP = false; getgenv().mob_esp_rainbow = getgenv().mob_esp_rainbow == nil and false or getgenv().mob_esp_rainbow
+            RunService:UnbindFromRenderStep("ESP_Mob_V2_Holder"); for i, ev in pairs(getgenv().Events_MobESP) do if ev and ev.Connected then ev:Disconnect() end; getgenv().Events_MobESP[i] = nil end; if getgenv().Syn_Drawing_MobESP then for _,d in pairs(getgenv().Syn_Drawing_MobESP) do if d then pcall(function() d:Remove() end) end end; getgenv().Syn_Drawing_MobESP = {} end
+            local function addinstance_to_renderlist_MobESP(character_object) local s,err = pcall(function() if character_object.Name:sub(1,1) == "." and getgenv().textlabels_Line1_MobESP[character_object] == nil then while getgenv().Lock_Create_MobESP do task.wait() end; getgenv().Lock_Create_MobESP = true; getgenv().textlabels_Line1_MobESP[character_object] = getgenv().synTextLabel_MobESP(); getgenv().textlabels_Line2_MobESP[character_object] = getgenv().synTextLabel_MobESP(); getgenv().textlabels_Line1_MobESP[character_object].Visible = false; getgenv().textlabels_Line2_MobESP[character_object].Visible = false; getgenv().textlabels_Line1_MobESP[character_object].ZIndex = 2000; getgenv().textlabels_Line2_MobESP[character_object].ZIndex = getgenv().textlabels_Line1_MobESP[character_object].ZIndex; getgenv().Lock_Create_MobESP = false end end); if not s then warn("MobESP ChildAdded Error:", err) end end
+            if workspace:FindFirstChild("Live") then getgenv().Events_MobESP["ChildAdded_EV"] = workspace.Live.ChildAdded:Connect(addinstance_to_renderlist_MobESP); getgenv().Events_MobESP["ChildRemoved_EV"] = workspace.Live.ChildRemoved:Connect(function(character_object) pcall(function() if getgenv().textlabels_Line1_MobESP[character_object] ~= nil then getgenv().textlabels_Line1_MobESP[character_object]:Remove(); getgenv().textlabels_Line1_MobESP[character_object] = nil; getgenv().textlabels_Line2_MobESP[character_object]:Remove(); getgenv().textlabels_Line2_MobESP[character_object] = nil end end) end); for _,character_object in pairs(workspace.Live:GetChildren()) do addinstance_to_renderlist_MobESP(character_object) end else warn("Mob ESP: workspace.Live not found.") end
+            RunService:BindToRenderStep("ESP_Mob_V2_Holder", 201, function() pcall(function() local localPlayerChar = Players.LocalPlayer and Players.LocalPlayer.Character; local playerpos = localPlayerChar and localPlayerChar:FindFirstChild("HumanoidRootPart") and localPlayerChar.HumanoidRootPart.Position or workspace.CurrentCamera.CFrame.Position; for npc_model, renderobject1 in pairs(getgenv().textlabels_Line1_MobESP) do local renderobject2 = getgenv().textlabels_Line2_MobESP[npc_model]; if renderobject1 and renderobject2 and npc_model and npc_model.Parent then local part = npc_model:FindFirstChild("HumanoidRootPart") or npc_model:FindFirstChild("Torso") or npc_model:FindFirstChildOfClass("BasePart"); if part then local character_pos_cframe = part.CFrame; local pos_on_screen, in_fov = getgenv().worldpoint_to_viewpoint_MobESP(character_pos_cframe); local distance = (character_pos_cframe.Position - playerpos).Magnitude; local should_be_visible = getgenv().MobESPEnabledState and Holder.GlobalESPEnabled and in_fov and distance < Holder.GlobalMaxDistance; renderobject1.Visible = should_be_visible; renderobject2.Visible = should_be_visible; if should_be_visible then renderobject1.Position = pos_on_screen; renderobject2.Position = renderobject1.Position + Vector2.new(0, renderobject1.TextBounds.Y); local humanoid = npc_model:FindFirstChildOfClass("Humanoid"); if humanoid then renderobject1.Text = npc_model.Name; renderobject2.Text = string.format("[%.0fm] [%.0f/%.0f]", distance, humanoid.Health, humanoid.MaxHealth) else renderobject1.Text = npc_model.Name; renderobject2.Text = string.format("[%.0fm]", distance) end; local color = getgenv().mob_esp_rainbow and Color3.fromHSV(tick()*0.1 % 1, 1, 1) or Color3.new(1,0.2,0.2); renderobject1.Color = color; renderobject2.Color = color; renderobject1.Size = 18; renderobject2.Size = 16 end else renderobject1.Visible = false; renderobject2.Visible = false end else if renderobject1 then renderobject1.Visible = false end; if renderobject2 then renderobject2.Visible = false end end end end) end)
+            local last_cleaning_tick_mob_esp = tick(); getgenv().Events_MobESP["Cleaner_EV"] = RunService.Stepped:Connect(function() if tick() - last_cleaning_tick_mob_esp >= 5 then last_cleaning_tick_mob_esp = tick(); pcall(function() for npc_model, ro1 in pairs(getgenv().textlabels_Line1_MobESP) do if not npc_model or not npc_model.Parent then if ro1 then ro1:Remove() end; local ro2 = getgenv().textlabels_Line2_MobESP[npc_model]; if ro2 then ro2:Remove() end; getgenv().textlabels_Line1_MobESP[npc_model] = nil; getgenv().textlabels_Line2_MobESP[npc_model] = nil end end end) end end)
+        end)
+        if not s_init then warn("Mob ESP Initialization Error:", err_init) end
+        getgenv().MobESPInitialized = true
+    end
+
+    Holder.ToggleMobESP = function(value) if not getgenv().MobESPInitialized then initializeMobESP() end; getgenv().MobESPEnabledState = value; if not value or not Holder.GlobalESPEnabled then if getgenv().textlabels_Line1_MobESP then for _, ro in pairs(getgenv().textlabels_Line1_MobESP) do if ro then ro.Visible = false end end end; if getgenv().textlabels_Line2_MobESP then for _, ro in pairs(getgenv().textlabels_Line2_MobESP) do if ro then ro.Visible = false end end end end
+    Holder.SetMobESPRainbow = function(value) getgenv().mob_esp_rainbow = value; end
+    Holder.CleanupMobESP = function() RunService:UnbindFromRenderStep("ESP_Mob_V2_Holder"); for i, ev in pairs(getgenv().Events_MobESP) do if ev and ev.Connected then ev:Disconnect() end; getgenv().Events_MobESP[i] = nil end; if getgenv().Syn_Drawing_MobESP then for _,d in pairs(getgenv().Syn_Drawing_MobESP) do if d then pcall(function() d:Remove() end) end end; getgenv().Syn_Drawing_MobESP = {} end; getgenv().textlabels_Line1_MobESP = {}; getgenv().textlabels_Line2_MobESP = {}; getgenv().MobESPInitialized = false; end
+end
+
+
+-- Generic Billboard ESP Function Creator
+local function CreateBillboardESPLogic(espKey, targetParentGetter, nameFilterFunction, defaultLabelPrefix, initialColor)
+    local moduleState = { isEnabled = false, espColor = initialColor or Color3.new(1, 1, 1), trackedInstances = {}, mainConnections = {} }; Holder[espKey.."_State"] = moduleState
+
+    local function internalCreateESP(modelInstance, labelText)
+        if not modelInstance or not modelInstance.Parent or moduleState.trackedInstances[modelInstance] then return end
+        local rootPart = modelInstance:FindFirstChild("HumanoidRootPart") or modelInstance:FindFirstChild("RootPart") or modelInstance:FindFirstChildOfClass("BasePart"); if not rootPart then return end
+        local billboardGui = Instance.new("BillboardGui"); billboardGui.Name = espKey .. "_Billboard"; billboardGui.Adornee = rootPart; billboardGui.Size = UDim2.new(0, 150, 0, 40); billboardGui.StudsOffset = Vector3.new(0, 2, 0); billboardGui.AlwaysOnTop = true; billboardGui.LightInfluence = 0; billboardGui.Enabled = moduleState.isEnabled and Holder.GlobalESPEnabled; billboardGui.Parent = modelInstance
+        local textLabel = Instance.new("TextLabel"); textLabel.Name = "ESPTag"; textLabel.Size = UDim2.new(1, 0, 1, 0); textLabel.BackgroundTransparency = 1; textLabel.TextColor3 = moduleState.espColor; textLabel.TextStrokeTransparency = 0.5; textLabel.TextStrokeColor3 = Color3.new(0,0,0); textLabel.Font = Enum.Font.SourceSansSemibold; textLabel.TextSize = 14; textLabel.Text = labelText; textLabel.Parent = billboardGui
+        local rsConnection; rsConnection = RunService.RenderStepped:Connect(function() if not modelInstance or not modelInstance.Parent or not rootPart or not rootPart.Parent or not billboardGui or not billboardGui.Parent then if rsConnection then rsConnection:Disconnect() end; if moduleState.trackedInstances[modelInstance] then if moduleState.trackedInstances[modelInstance].gui and moduleState.trackedInstances[modelInstance].gui.Parent then moduleState.trackedInstances[modelInstance].gui:Destroy() end; moduleState.trackedInstances[modelInstance] = nil end; return end; local currentDistance = math.huge; local localPlayerChar = Players.LocalPlayer and Players.LocalPlayer.Character; if localPlayerChar and localPlayerChar:FindFirstChild("HumanoidRootPart") then currentDistance = (localPlayerChar.HumanoidRootPart.Position - rootPart.Position).Magnitude end; local isVisible = moduleState.isEnabled and Holder.GlobalESPEnabled and (currentDistance <= Holder.GlobalMaxDistance); billboardGui.Enabled = isVisible; if isVisible then if localPlayerChar then textLabel.Text = string.format("[%s] %.0fm", labelText, currentDistance) else textLabel.Text = string.format("[%s] [N/A]", labelText) end else textLabel.Text = "" end end); moduleState.trackedInstances[modelInstance] = {gui = billboardGui, rsConn = rsConnection}
+    end
+
+    local function internalToggleESP(enabled) moduleState.isEnabled = enabled; local effectiveGlobalEnable = Holder.GlobalESPEnabled; for model, data in pairs(moduleState.trackedInstances) do if data and data.gui and data.gui.Parent then data.gui.Enabled = moduleState.isEnabled and effectiveGlobalEnable else if data and data.rsConn and data.rsConn.Connected then data.rsConn:Disconnect() end; moduleState.trackedInstances[model] = nil end end; if moduleState.isEnabled and effectiveGlobalEnable then local targetParent = targetParentGetter(); if targetParent then for _, model in ipairs(targetParent:GetChildren()) do if model:IsA("Model") and nameFilterFunction(model) then if not moduleState.trackedInstances[model] then internalCreateESP(model, defaultLabelPrefix or model.Name) end end end end end end
+    local function internalUpdateColor(color) moduleState.espColor = color; for model, data in pairs(moduleState.trackedInstances) do if data and data.gui and data.gui.Parent then local textLabel = data.gui:FindFirstChild("ESPTag"); if textLabel then textLabel.TextColor3 = moduleState.espColor end end end end
+    local function cleanup() for model, data in pairs(moduleState.trackedInstances) do if data then if data.rsConn and data.rsConn.Connected then data.rsConn:Disconnect() end; if data.gui and data.gui.Parent then data.gui:Destroy() end end end; moduleState.trackedInstances = {}; for _, conn in ipairs(moduleState.mainConnections) do if conn.Connected then conn:Disconnect() end end; moduleState.mainConnections = {} end
+    Holder[espKey] = { Toggle = internalToggleESP, UpdateColor = internalUpdateColor, Cleanup = cleanup, IsEnabled = function() return moduleState.isEnabled end }
+    local targetParent = targetParentGetter(); if targetParent then local childAddedConn = targetParent.ChildAdded:Connect(function(model) if model:IsA("Model") and nameFilterFunction(model) then task.wait(0.1); internalCreateESP(model, defaultLabelPrefix or model.Name) end end); table.insert(moduleState.mainConnections, childAddedConn); for _, model in ipairs(targetParent:GetChildren()) do if model:IsA("Model") and nameFilterFunction(model) then internalCreateESP(model, defaultLabelPrefix or model.Name) end end else warn("Could not find target parent for ESP:", espKey) end
+end
+
+-- Create specific Billboard ESPs using the generic creator
+CreateBillboardESPLogic("NPC_ESP", function() return workspace:FindFirstChild("NPCs") end, function(model) return model:FindFirstChild("Humanoid") and not string.match(model.Name, "^Shrine") and not string.match(model.Name, "^Mystic") end)
+CreateBillboardESPLogic("Shrine_ESP", function() return workspace:FindFirstChild("NPCs") end, function(model) return string.match(model.Name, "^Shrine") and model:FindFirstChild("Humanoid") end)
+CreateBillboardESPLogic("Mystic_ESP", function() return workspace:FindFirstChild("NPCs") end, function(model) return string.match(model.Name, "^Mystic") and model:FindFirstChild("Humanoid") end)
+CreateBillboardESPLogic("Whirlpool_ESP", function() return workspace end, function(model) return model.Name == "DepthsWhirlpool" end)
+CreateBillboardESPLogic("Chest_ESP", function() return workspace:FindFirstChild("Thrown") end, function(model) return true end, "Chest")
+
+-- REMOVED Ingredients, Bags, Artifacts, Area ESP calls
+
+-- Final return for loadstring
+return Holder
