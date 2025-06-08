@@ -32,7 +32,7 @@ local function T2_Main()
         "hes cheating", "shes cheating",
         "i have proof", "got proof" -- Risky
     }
-    local webhook_url = "https://discord.com/api/webhooks/1325735244942409809/CMVN3_2Cpi92tSlT9O_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_" -- Ensure this is correct
+    local webhook_url = "https://discord.com/api/webhooks/13257352449_bLdv_GZrWvYkY2nOTTQigIuJDC4BCg7CEA-UB_9JDWGGlKys_" -- Ensure this is correct
     local http_request = syn and syn.request or request or http and http.request or fluxus and fluxus.request
 
     local function sendAndBlacklist(flaggedMessage)
